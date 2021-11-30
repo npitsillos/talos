@@ -1,8 +1,6 @@
 # `python-base` sets up all our shared environment variables
 FROM python:3.8.1-slim as python-base
 
-WORKDIR /talosbot
-
     # python
 ENV PYTHONUNBUFFERED=1 \
     # prevents python creating .pyc files
@@ -37,9 +35,10 @@ RUN apt-get update \
 # install poetry - respects $POETRY_VERSION & $POETRY_HOME
 RUN curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
 
-COPY . /talosbot
+COPY . /talos
 
-WORKDIR /talosbot
+WORKDIR /talos
+
 # install runtime deps - uses $POETRY_VIRTUALENVS_IN_PROJECT internally
 RUN poetry config virtualenvs.create false
 RUN poetry install

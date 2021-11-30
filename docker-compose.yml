@@ -5,8 +5,8 @@ services:
     container_name: 'talosbot'
     restart: always
     volumes:
-      - ./talosbot:/talosbot/talosbot
-    working_dir: /talosbot
+      - ./talos:/talos/talosbot
+    working_dir: /talos
     command: poetry run talosbot run
     depends_on:
       - mongo
