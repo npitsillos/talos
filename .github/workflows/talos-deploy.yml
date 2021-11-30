@@ -18,8 +18,12 @@ jobs:
     steps:
     - name: Deploy Talos
       run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.HOST }}" > ~/.ssh/known_hosts
+        eval `ssh-agent`
+        ssh-add - <<< "${{ secrets.EC2_KEY }}"
         env | grep TALOSBOT > .env
         echo KAGGLE_USERNAME="${{ secrets.USERNAME }}" >> .env && echo KAGGLE_KEY="${{ secrets.KAGGLE_KEY }}" >> .env
-        ssh -o "StrictHostKeyChecking no" -t ubuntu@ec2-3-8-59-142.eu-west-2.compute.amazonaws.com 'sudo rm -rf talos && git clone https://github.com/npitsillos/talosbot && cd talos'
-        scp -o "StrictHostKeyChecking no" .env ubuntu@ec2-3-8-59-142.eu-west-2.compute.amazonaws.com:/home/ubuntu/talosbot/.env
-        ssh -o "StrictHostKeyChecking no" -t ubuntu@ec2-3-8-59-142.eu-west-2.compute.amazonaws.com 'docker-compose -f docker-compose.yml --build -d'
+        ssh ubuntu@ec2-3-8-59-142.eu-west-2.compute.amazonaws.com 'sudo rm -rf talos && git clone https://github.com/npitsillos/talosbot && cd talos'
+        scp .env ubuntu@ec2-3-8-59-142.eu-west-2.compute.amazonaws.com:/home/ubuntu/talosbot/.env
+        ssh ubuntu@ec2-3-8-59-142.eu-west-2.compute.amazonaws.com 'docker-compose -f docker-compose.yml --build -d'
