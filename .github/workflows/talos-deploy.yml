@@ -24,6 +24,6 @@ jobs:
         ssh-add - <<< "${{ secrets.EC2_KEY }}"
         env | grep TALOSBOT > .env
         echo KAGGLE_USERNAME="${{ secrets.USERNAME }}" >> .env && echo KAGGLE_KEY="${{ secrets.KAGGLE_KEY }}" >> .env
-        ssh ubuntu@ec2-3-8-59-142.eu-west-2.compute.amazonaws.com 'sudo rm -rf talos && git clone https://github.com/npitsillos/talosbot'
+        ssh ubuntu@ec2-3-8-59-142.eu-west-2.compute.amazonaws.com 'sudo rm -rf talos && git clone https://github.com/npitsillos/talos'
         scp .env ubuntu@ec2-3-8-59-142.eu-west-2.compute.amazonaws.com:/home/ubuntu/talosbot/.env
         ssh ubuntu@ec2-3-8-59-142.eu-west-2.compute.amazonaws.com 'cd talos && docker-compose -f docker-compose.yml --build -d'
