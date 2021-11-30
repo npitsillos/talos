@@ -20,6 +20,7 @@ jobs:
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.HOST }}" > ~/.ssh/known_hosts
+        cat ~/.ssh/known_hosts
         eval `ssh-agent`
         ssh-add - <<< "${{ secrets.EC2_KEY }}"
         env | grep TALOSBOT > .env
