@@ -1,0 +1,8 @@
+repo:
+  - ./*
+
+feature:
+  - talos/*
+
+documentation:
+  - ./*.md

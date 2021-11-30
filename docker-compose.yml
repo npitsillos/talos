@@ -1,0 +1,22 @@
+version: '3'
+services:
+  bot:
+    build: .
+    container_name: 'talosbot'
+    restart: always
+    volumes:
+      - ./talosbot:/talosbot/talosbot
+    working_dir: /talosbot
+    command: poetry run talosbot run
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo
+    ports:
+      - '27017:27017'
+    restart: always
+    volumes:
+      - db-data:/data/db
+volumes:
+  db-data:
+    driver: local

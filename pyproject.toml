@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "talosbot"
+version = "0.1.0"
+description = "Discord bot focused on managing Kaggle comps and learning about AI & Data Science"
+authors = ["Nikolas Pitsillos <npitsillos@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+click = "^8.0.3"
+"discord.py" = "^1.7.3"
+python-dotenv = "^0.19.2"
+pymodm = "^0.4.3"
+texttable = "^1.6.4"
+kaggle = "^1.5.12"
+colorama = "^0.4.4"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+talosbot="talosbot.cli:cli"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

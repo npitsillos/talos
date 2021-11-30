@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  live-reloader:
+    image: apogiatzis/livereloading
+    container_name: livereloader
+    privileged: true
+    environment:
+      - RELOAD_CONTAINER=talosbot
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - ./talosbot:/talosbot
