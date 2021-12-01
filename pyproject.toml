@@ -16,8 +16,8 @@ colorama = "^0.4.4"
 
 [tool.poetry.dev-dependencies]
 black = "^21.11b1"
-flakehell = "^0.9.0"
 pre-commit = "^2.16.0"
+flake8 = "^4.0.1"
 
 [tool.poetry.scripts]
 talosbot="talosbot.cli:cli"
@@ -42,3 +42,6 @@ exclude = '''
   | dist
 )/
 '''
+
+[tool.flake8]
+max-line-length = 120

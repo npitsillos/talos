@@ -1,7 +1,4 @@
-import discord
 import logging
-
-from talosbot.db_models import Comp
 
 logger = logging.getLogger(__name__)
 
