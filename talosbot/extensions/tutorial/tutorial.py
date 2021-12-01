@@ -79,6 +79,5 @@ class Tutorial(commands.Cog):
             emb = self._get_tutorial_embed(tutorial)
             await ctx.channel.send(embed=emb)
 
-
 def setup(bot):
     bot.add_cog(Tutorial(bot))
