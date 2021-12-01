@@ -9,3 +9,6 @@ class CompetitionAlreadyFinishedException(Exception):
 
 class TutorialAlreadyExistsException(Exception):
     pass
+
+class NotInCompCategoryException(Exception):
+    pass

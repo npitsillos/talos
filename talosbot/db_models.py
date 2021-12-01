@@ -22,7 +22,7 @@ class Comp(MongoModel):
     team_name = fields.CharField(required=False)
     team_members = fields.ListField(fields.CharField())
 
-class Tutorial(MongoModel):
+class TutorialModel(MongoModel):
     name = fields.CharField(required=True)
     created_at = fields.DateTimeField(required=True)
     url = fields.CharField(required=True)

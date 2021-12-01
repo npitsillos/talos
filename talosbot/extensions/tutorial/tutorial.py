@@ -3,7 +3,7 @@ import logging
 import datetime
 
 from discord.ext import commands
-from talosbot.db_models import Tutorial
+from talosbot.db_models import TutorialModel
 from talosbot.exceptions import TutorialAlreadyExistsException
 
 logger = logging.getLogger(__name__)
@@ -53,12 +53,12 @@ class Tutorial(commands.Cog):
                 category (str): the tutorial category
         """
         
-        tutorial = Tutorial.objects.get(name=name)
+        tutorial = TutorialModel.objects.get(name=name)
 
         if tutorial is not None:
             raise TutorialAlreadyExistsException
         
-        Tutorial(name=name, created_at=datetime.datetime.now(), url=url, difficulty=difficulty, category=category).save()
+        TutorialModel(name=name, created_at=datetime.datetime.now(), url=url, difficulty=difficulty, category=category).save()
 
         channel = self.bot.guild[0].get_channel(Tutorial.MODERATOR_ONLY_CHANNEL_ID)
         await channel.send(f"Tutorial has been created.")
@@ -70,7 +70,10 @@ class Tutorial(commands.Cog):
        
     @tutorial.command()
     async def list(self, ctx):
-        tutorials = Tutorial.objects.all()
+        tutorials = TutorialModel.objects.all()
         for tutorial in tutorials:
             emb = self._get_tutorial_embed(tutorial)
             await ctx.channel.send(embed=emb)
+
+def setup(bot):
+    bot.add_cog(Tutorial(bot))
