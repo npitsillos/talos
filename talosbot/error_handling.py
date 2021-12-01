@@ -11,8 +11,8 @@ from discord.ext.commands.errors import (
 
 logger = logging.getLogger(__name__)
 
-def hook_error_handlers(bot):
 
+def hook_error_handlers(bot):
     @bot.event
     async def on_error(event, *args, **kwargs):
         logger.info("ON_ERROR")
@@ -20,7 +20,7 @@ def hook_error_handlers(bot):
         for arg in args:
             if isinstance(arg, Exception):
                 raise arg
-    
+
     @bot.event
     async def on_command_error(ctx, error):
 

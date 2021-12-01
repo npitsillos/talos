@@ -2,17 +2,16 @@ import os
 import sys
 
 from pathlib import Path
-from talosbot.db_models import CogDetails
 
-class CogManager():
 
+class CogManager:
     def __init__(self, bot):
         self.bot = bot
 
     # @property
     # def cogs(self):
     #     return CogDetails.objects.all()
-    
+
     def _builtin_cogs(self):
         cog_dir = os.path.join(Path(__file__).resolve().parent, "extensions")
         builtin_cogs = self._load_cog_details_path(cog_dir)

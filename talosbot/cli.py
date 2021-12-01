@@ -10,9 +10,11 @@ from talosbot.__version__ import __version__
 from pymongo.errors import ServerSelectionTimeoutError
 
 from texttable import Texttable
+
 load_dotenv(dotenv_path=os.path.join(os.getcwd(), ".env"))
 
 from talosbot.config import bot_config
+
 
 def draw_options_table(options):
     table = Texttable()
@@ -26,6 +28,7 @@ def draw_options_table(options):
         ]
     )
     return table.draw()
+
 
 @click.group()
 @click.option("--env", default="prod", help="Which environment to use")
@@ -52,18 +55,19 @@ def config(ctx):
     click.echo(
         # config._load_static_props()
         draw_options_table(
-        #     chain(
-        #         config._get_configurable_props_from_cls(),
-                config._get_static_props_from_cls(),
-        #     )
+            #     chain(
+            #         config._get_configurable_props_from_cls(),
+            config._get_static_props_from_cls(),
+            #     )
         )
     )
+
 
 @cli.command()
 @click.pass_context
 def setupenv(ctx):
     """
-        Sets up environment variables for bot
+    Sets up environment variables for bot
     """
     config_cls = bot_config[ctx.obj["env"]]
     env = defaultdict(str)
@@ -73,7 +77,7 @@ def setupenv(ctx):
             value = click.prompt(f"Provide the value for TALOSBOT_{attr}", default=default_val)
             value = value or default_val
             env[attr] = value
-    
+
     ROOT_DIR = os.path.abspath(os.curdir)
 
     with open(os.path.join(ROOT_DIR, ".env"), "w") as f:
@@ -82,10 +86,11 @@ def setupenv(ctx):
                 env_var = f"TALOSBOT_{key}={value}" if "KAGGLE" not in key else f"{key}={value}"
                 f.write(f"{env_var}\n")
 
+
 @cli.command()
 def run():
     """
-        Launches bot
+    Launches bot
     """
     launch()
 
@@ -93,6 +98,6 @@ def run():
 @cli.command()
 def version():
     """
-        Displays bot version
+    Displays bot version
     """
     click.echo(f"TalosBot v{__version__}")

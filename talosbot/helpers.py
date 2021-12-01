@@ -1,4 +1,3 @@
-
 def get_team_entry_from_leaderboard(leaderboard, team_name):
     team_record = None
     for team in leaderboard:
@@ -8,7 +7,8 @@ def get_team_entry_from_leaderboard(leaderboard, team_name):
             break
     return team_record
 
+
 def slugify(name):
     name_items = name.split()
     words_in_name = filter(lambda x: len(x) > 1, name_items)
-    return '-'.join(words_in_name)
+    return "-".join(words_in_name)
