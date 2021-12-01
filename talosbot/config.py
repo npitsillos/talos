@@ -11,11 +11,12 @@ from pymodm.errors import ValidationError
 
 logger = logging.getLogger(__name__)
 
+
 class ConfigurableProperty:
     """
-        Defines a property that can be updated dyanmically
-        through the bot. For that purpose, the last value of the property
-        is also kept in the database
+    Defines a property that can be updated dyanmically
+    through the bot. For that purpose, the last value of the property
+    is also kept in the database
     """
 
     def __init__(self, value: str):
@@ -28,6 +29,7 @@ class ConfigurableProperty:
     def __str__(self):
         return str(self._value)
 
+
 class AbstractConfig:
 
     __instance__ = None
@@ -38,7 +40,7 @@ class AbstractConfig:
             AbstractConfig.__instance__ = object.__new__(cls)
             AbstractConfig.__instance__._copy_from_class()
             AbstractConfig.__instance__._load_from_db()
-        
+
         return AbstractConfig.__instance__
 
     def _copy_from_class(self) -> NoReturn:
@@ -50,14 +52,19 @@ class AbstractConfig:
 
     def _get_static_props_from_cls(self) -> List[Any]:
         props = inspect.getmembers(self.__class__, lambda a: not (inspect.isroutine(a)))
-        props = filter(lambda a: not(isinstance(getattr(self.__class__, a[0]), ConfigurableProperty)
-                        or (a[0].startswith("__") and a[0].endswith("__"))), props)
+        props = filter(
+            lambda a: not (
+                isinstance(getattr(self.__class__, a[0]), ConfigurableProperty)
+                or (a[0].startswith("__") and a[0].endswith("__"))
+            ),
+            props,
+        )
         return props
 
     def _get_configurable_props_from_cls(self) -> List[Any]:
         props = inspect.getmembers(self.__class__, lambda a: not (inspect.isroutine(a)))
         props = filter(lambda a: isinstance(getattr(self.__class__, a[0]), ConfigurableProperty), props)
-        
+
         return map(lambda a: (a[0], a[1].value), props)
 
     def _get_or_create_config_from_db(self) -> BotConfig:
@@ -68,9 +75,7 @@ class AbstractConfig:
         try:
             return BotConfig.objects.all().first()
         except BotConfig.DoesNotExist:
-            config = BotConfig(
-                **{k: v for k, v in self._get_configurable_props_from_cls()}
-            )
+            config = BotConfig(**{k: v for k, v in self._get_configurable_props_from_cls()})
             try:
                 config.save()
             except ValidationError as err:
@@ -93,9 +98,7 @@ class AbstractConfig:
         config_in_db_props = inspect.getmembers(self.config_in_db, lambda a: not (inspect.isroutine(a)))
         for prop in self._get_configurable_props_from_cls():
             prop_name = prop[0]
-            config_in_db_prop_names = list(
-                map(lambda p: p[0], config_in_db_props)
-            )
+            config_in_db_prop_names = list(map(lambda p: p[0], config_in_db_props))
             if prop_name in config_in_db_prop_names:
                 setattr(self.config_in_db, prop_name, getattr(self, prop_name))
             else:
@@ -111,8 +114,9 @@ class AbstractConfig:
 
 class Config(AbstractConfig):
     """Configuration class"""
+
     DB_URL = environ.get("TALOSBOT_DB_URL", "mongodb://mongo/talosdb")
-    COMMAND_PREFIX = environ.get("TALOSBOT_COMMAND_PREFIX", '!')
+    COMMAND_PREFIX = environ.get("TALOSBOT_COMMAND_PREFIX", "!")
     DISCORD_BOT_TOKEN = environ.get("TALOSBOT_DISCORD_BOT_TOKEN")
 
     GIT_REPO = environ.get("TALOSBOT_GIT_REPO", "https://github.com/npitsillos/talosbot.git")
@@ -122,6 +126,7 @@ class Config(AbstractConfig):
 
     ADMIN_ROLE = ConfigurableProperty(environ.get("TALOSBOT_ADMIN_ROLE"))
 
+
 class DevConfig(Config):
     pass
 
@@ -129,7 +134,5 @@ class DevConfig(Config):
 class ProdConfig(Config):
     pass
 
-bot_config = {
-    "dev": DevConfig,
-    "prod": ProdConfig
-}
+
+bot_config = {"dev": DevConfig, "prod": ProdConfig}

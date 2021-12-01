@@ -5,8 +5,8 @@ from talosbot.__version__ import __version__
 
 logger = logging.getLogger(__name__)
 
-def hook_events(bot):
 
+def hook_events(bot):
     @bot.event
     async def on_ready():
         logger.info(f"<{bot.user.name} Online>")
@@ -25,7 +25,7 @@ def hook_events(bot):
         await member.send(
             f"Hello {member.name} Welcome to the server! Send {bot.command.prefix}help for a list of commands."
         )
-        
+
         announcements = discord.utils.get(member.guild.text_channels, name="announcements")
 
         if announcements is not None:

@@ -4,15 +4,18 @@ from pymodm import MongoModel, fields
 
 logger = logging.getLogger(__name__)
 
+
 class CogDetails(MongoModel):
     name = fields.CharField(required=True)
     local_path = fields.CharField(required=True)
     enabled = fields.BooleanField(default=True)
     loaded = fields.BooleanField(default=False)
 
+
 class BotConfig(MongoModel):
     ADMIN_ROLE = fields.CharField()
     EXTENSIONS = fields.EmbeddedDocumentListField(CogDetails, default=[])
+
 
 class Comp(MongoModel):
     name = fields.CharField(required=True)
@@ -21,6 +24,7 @@ class Comp(MongoModel):
     url = fields.URLField()
     team_name = fields.CharField(required=False)
     team_members = fields.ListField(fields.CharField())
+
 
 class TutorialModel(MongoModel):
     name = fields.CharField(required=True)
