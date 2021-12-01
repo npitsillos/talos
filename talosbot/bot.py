@@ -16,18 +16,16 @@ from pymongo.errors import ServerSelectionTimeoutError
 
 logger = logging.getLogger(__name__)
 
-class TalosBot(Bot, BaseCommandsMixin):
 
+class TalosBot(Bot, BaseCommandsMixin):
     def __init__(self, *args, **kwargs):
 
-        env_path = os.path.join(
-            Path(sys.modules[__name__].__file__).resolve().parent.parent, ".env"  
-        )
+        env_path = os.path.join(Path(sys.modules[__name__].__file__).resolve().parent.parent, ".env")
 
         load_dotenv(dotenv_path=env_path, verbose=True)
         env = os.environ.get("TALOSBOT_ENV", "dev")
         from talosbot.config import bot_config
-        
+
         try:
             self.config_cls = bot_config[env]
             self.init_db()
@@ -37,7 +35,7 @@ class TalosBot(Bot, BaseCommandsMixin):
                 "Database timeout error. Make sure an instance of mongodb is running and your TALOSBOT_DB_URL env variable is set!"
             )
             exit(1)
-        
+
         intents = discord.Intents.default()
         intents.members = True
         super().__init__(*args, command_prefix=self.config.COMMAND_PREFIX, intents=intents, **kwargs)
