@@ -2,7 +2,6 @@ import os
 import sys
 
 from pathlib import Path
-from talosbot.db_models import CogDetails
 
 
 class CogManager:

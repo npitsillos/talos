@@ -121,17 +121,13 @@ class Competition(commands.Cog):
             category = await self.guild.create_category(name=comp_name, overwrites=overwrites)
             general_channel = await self.guild.create_text_channel(name="general", category=category)
 
-<<<<<<< HEAD
-            Comp(name=category, url=matched_comp["url"], created_at=datetime.datetime.now(), deadline=matched_comp["deadline"], team_name=team_name).save()
-=======
             Comp(
                 name=category,
                 url=matched_comp["url"],
                 created_at=datetime.datetime.now(),
-                deadline=matched_comps[0]["deadline"],
+                deadline=matched_comp["deadline"],
                 team_name=team_name,
             ).save()
->>>>>>> 65f452026276bd082ebbf70c6840a8c5e691dcef
 
             await general_channel.send("@here New competition created! @here Άτε κοπέλια..!")
         else:

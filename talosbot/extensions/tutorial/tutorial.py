@@ -65,7 +65,7 @@ class Tutorial(commands.Cog):
         ).save()
 
         channel = self.bot.guild[0].get_channel(Tutorial.MODERATOR_ONLY_CHANNEL_ID)
-        await channel.send(f"Tutorial has been created.")
+        await channel.send("Tutorial has been created.")
 
     @create.error
     async def create_error(self, ctx, error):
