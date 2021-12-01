@@ -44,7 +44,7 @@ exclude = '''
 '''
 
 [tool.flakehell]
-exclude = ["*.ipynb", "*.md"]
+exclude = ["*.md"]
 format = "grouped"
 max_line_length = 120
 show_source = true
