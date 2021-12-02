@@ -1,7 +1,7 @@
 name: talos-deploy
 on:
   push:
-    branches: [main, talos-dev]
+    branches: [main, talos-dev, test]
   pull_request:
     branches: [talos-dev]
 
@@ -19,7 +19,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        ref: $GITHUB_REF_NAME
+        ref: ${{ github.ref }}
     - name: Deploy Talos
       run: |
         mkdir -p ~/.ssh
