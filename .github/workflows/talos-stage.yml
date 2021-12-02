@@ -1,0 +1,20 @@
+name: talos-stage
+on:
+  push:
+    branches: [talos-dev]
+  pull_request:
+    branches: [talos-dev]
+
+jobs:
+  stage:
+    name: Stage Talos on Github Ubuntu Image
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Triggering Branch
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.ref }}
+    - name: Check container
+      run: |
+        cd $GITHUB_WORKSPACE
+        docker-compose -f docker-compose.yml up --build -d

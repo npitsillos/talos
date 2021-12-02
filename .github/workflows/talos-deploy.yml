@@ -1,9 +1,13 @@
 name: talos-deploy
 on:
   push:
-    branches: [main, talos-dev]
+    branches: [main]
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
   pull_request:
-    branches: [talos-dev]
+    branches: [main]
+    types: [closed]
 
 jobs:
   deploy:
@@ -17,9 +21,6 @@ jobs:
       TALOSBOT_DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
 
     steps:
-    - uses: actions/checkout@v2
-      with:
-        ref: $GITHUB_REF_NAME
     - name: Deploy Talos
       run: |
         mkdir -p ~/.ssh
