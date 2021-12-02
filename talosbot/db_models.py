@@ -21,9 +21,13 @@ class Comp(MongoModel):
     name = fields.CharField(required=True)
     created_at = fields.DateTimeField(required=True)
     deadline = fields.DateTimeField()
+    merger_deadline = fields.DateTimeField()
     url = fields.URLField()
     team_name = fields.CharField(required=False)
     team_members = fields.ListField(fields.CharField())
+    max_team_size = fields.IntegerField()
+    max_daily_subs = fields.IntegerField()
+    subs_today = fields.IntegerField(default=0)
 
 
 class TutorialModel(MongoModel):

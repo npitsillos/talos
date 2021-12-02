@@ -3,10 +3,9 @@ import discord
 import datetime
 
 from typing import Optional
-from discord.ext import commands
 from difflib import SequenceMatcher
 from talosbot.db_models import Comp
-from talosbot.helpers import slugify
+from discord.ext import commands, tasks
 from talosbot.helpers import get_team_entry_from_leaderboard
 from kaggle.api.kaggle_api_extended import KaggleApi
 from talosbot.exceptions import (
@@ -14,12 +13,19 @@ from talosbot.exceptions import (
     CompetitionAlreadyExistsException,
     CompetitionAlreadyFinishedException,
     NotInCompCategoryException,
+    TeamAlreadyHasNameException,
 )
 
 logger = logging.getLogger(__name__)
 
 CATEGORIES = ["featured", "research", "recruitment", "gettingStarted", "masters", "playground"]
-EMOJIS = {"question": ":question:", "right": ":point_right:", "calendar": ":calendar:"}
+EMOJIS = {
+    "question": ":question:",
+    "right": ":point_right:",
+    "calendar": ":calendar:",
+    "worried": ":worried:",
+    "tada": ":tada:",
+}
 FIELDS = ["teamId", "teamName", "submissionDate", "score"]
 
 
@@ -97,19 +103,19 @@ class Competition(commands.Cog):
         max_longest_match = 0
         matched_comp = None
         for latest_comp in latest_comps:
-            matcher = SequenceMatcher(None, comp_name, latest_comp["title"])
+            matcher = SequenceMatcher(None, comp_name, latest_comp["ref"])
             longest_match = matcher.find_longest_match(0, len(comp_name), 0, len(latest_comp["title"])).size
             if longest_match > max_longest_match:
                 max_longest_match = longest_match
                 matched_comp = latest_comp
 
         if matched_comp:
-            category = discord.utils.get(ctx.guild.categories, name=comp_name)
+            category = discord.utils.get(ctx.guild.categories, name=matched_comp["ref"])
 
             if category is not None:
                 raise CompetitionAlreadyExistsException
 
-            comp_role = await self.guild.create_role(name=f"Comp-{comp_name}", mentionable=True)
+            comp_role = await self.guild.create_role(name=f"Comp-{matched_comp['ref']}", mentionable=True)
             await ctx.message.author.add_roles(comp_role)
             overwrites = {
                 # Everyone
@@ -118,7 +124,7 @@ class Competition(commands.Cog):
                 comp_role: discord.PermissionOverwrite(read_messages=True),
             }
 
-            category = await self.guild.create_category(name=comp_name, overwrites=overwrites)
+            category = await self.guild.create_category(name=matched_comp["ref"], overwrites=overwrites)
             general_channel = await self.guild.create_text_channel(name="general", category=category)
 
             Comp(
@@ -127,6 +133,9 @@ class Competition(commands.Cog):
                 created_at=datetime.datetime.now(),
                 deadline=matched_comp["deadline"],
                 team_name=team_name,
+                max_team_size=matched_comp["maxTeamSize"],
+                max_daily_subs=matched_comp["maxDailySubmissions"],
+                merger_deadline=matched_comp["mergerDeadline"],
             ).save()
 
             await general_channel.send("@here New competition created! @here Άτε κοπέλια..!")
@@ -167,34 +176,69 @@ class Competition(commands.Cog):
     async def addteammate(self, ctx, team_mate: str):
         """
         Adds teammate to competition. (should be run within competition category)
+
+        Parameters:
+            team_mate (str): discord username of teammate to add
         """
+
         category = ctx.channel.category.name
         comp = Comp.objects.get({"name": category})
         if comp is None:
             raise NotInCompCategoryException
         else:
             comp = Comp.objects.get({"name": category})
-            comp.team_members.append(team_mate)
-            comp.save()
-            channels = ctx.channel.category.channels
-            general = list(filter(lambda x: x.name == "general", channels))[0]
-            user = None
-            for guild in self.guilds:
-                for member in guild.members:
-                    if member.name == team_mate:
-                        user = member
-                        break
-
-            comp_role = discord.utils.get(ctx.guild.roles, name=f"Comp-{category}")
-            await user.add_roles(comp_role)
-            await general.send(
-                f"{user.mention} you have been added to {comp.name} by {ctx.message.author.mention}. Good luck!"
-            )
+            if team_mate in comp.team_members:
+                await ctx.channel.send(f"{team_mate} is already a member of the competition's team")
+            else:
+                if len(comp.team_members) < comp.max_team_size:
+                    comp.team_members.append(team_mate)
+                    comp.save()
+                    general = discord.utils.get(ctx.channel.category.channels, name="general")
+                    user = None
+                    for guild in self.bot.guilds:
+                        for member in guild.members:
+                            if member.name == team_mate:
+                                user = member
+                                break
+                    if user:
+                        comp_role = discord.utils.get(ctx.guild.roles, name=f"Comp-{category}")
+                        await user.add_roles(comp_role)
+                        await general.send(
+                            f"{user.mention} you have been added to {comp.name} by {ctx.message.author.mention}. Good luck!"
+                        )
+                    else:
+                        await ctx.channel.send("Ένηβρα έτσι παίχτη... User not found!")
+                else:
+                    await ctx.channel.send(f"Team is already at maximum capacity... {EMOJIS['worried']}")
 
     @addteammate.error
-    async def addteammate(self, ctx, error):
+    async def addteammate_error(self, ctx, error):
         if isinstance(error.original, NotInCompCategoryException):
             await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
+
+    @comp.command(aliases=["teamname"])
+    async def set_team_name(self, ctx, team_name: str):
+        category = ctx.channel.category.name
+        comp = Comp.objects.get({"name": category})
+        if comp is None:
+            raise NotInCompCategoryException
+
+        if len(comp.team_name) == 1:  # default value is " "
+            comp.team_name = team_name
+            comp.save()
+            general = discord.utils.get(ctx.channel.category.channels, name="general")
+            await general.send(f"Let's go {team_name}!!!")
+        else:
+            raise TeamAlreadyHasNameException(comp.team_name)
+
+    @set_team_name.error
+    async def set_team_name_error(self, ctx, error):
+        if isinstance(error.original, NotInCompCategoryException):
+            await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
+        elif isinstance(error.original, TeamAlreadyHasNameException):
+            await ctx.channel.send(
+                f"Άρκησες ρε φίλε! This team already has a name and its... drum roll please {error.original.team_name} {EMOJIS['tada']}"
+            )
 
     @comp.command()
     @commands.has_permissions(manage_channels=True, manage_roles=True)
@@ -212,6 +256,14 @@ class Competition(commands.Cog):
         comp.save()
 
         await ctx.channel.send("Good job on the competition everyone! Επήαμε τα καλά;")
+
+    @tasks.loop(hours=24)
+    async def update_subs(self):
+
+        comps = Comp.objects.all()
+        for comp in comps:
+            comp.subs_today = 0
+            comp.save()
 
 
 def setup(bot):

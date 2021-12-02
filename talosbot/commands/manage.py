@@ -35,7 +35,13 @@ class ManageCommandsMixin:
             """
             Drops all competitions from database
             """
-            Comp._mongometa.collection.drop()
+            comps = Comp.objects.all()
+            if comps.count() > 0:
+                names = [comp.name for comp in comps]
+                for name in names:
+                    await self.dropcomp(ctx, name)
+            else:
+                await ctx.channel.send("There are no competitions stored in the DB")
 
         @manage.command()
         @commands.has_permissions(administrator=True)
@@ -55,7 +61,7 @@ class ManageCommandsMixin:
         @manage.command()
         async def showcomps(ctx):
             comps = Comp.objects.all()
-            if comps:
+            if comps.count() > 0:
                 for comp in comps:
                     await ctx.channel.send(comp.name)
             else:
