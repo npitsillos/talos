@@ -7,16 +7,16 @@ on:
 
 jobs:
   stage:
-    - name: Stage Talos on Github Ubuntu Image
-      runs-on: ubuntu-latest
-      steps:
-      - name: Checkout Triggering Branch
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.ref }}
-        run: |
-          cd talos
-          docker-compose -f docker-compose.yml up --build -d
+    name: Stage Talos on Github Ubuntu Image
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Triggering Branch
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.ref }}
+      run: |
+        cd talos
+        docker-compose -f docker-compose.yml up --build -d
       
 
   deploy:
