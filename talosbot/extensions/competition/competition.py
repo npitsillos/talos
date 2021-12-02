@@ -19,7 +19,13 @@ from talosbot.exceptions import (
 logger = logging.getLogger(__name__)
 
 CATEGORIES = ["featured", "research", "recruitment", "gettingStarted", "masters", "playground"]
-EMOJIS = {"question": ":question:", "right": ":point_right:", "calendar": ":calendar:", "worried": ":worried:", "tada": ":tada:"}
+EMOJIS = {
+    "question": ":question:",
+    "right": ":point_right:",
+    "calendar": ":calendar:",
+    "worried": ":worried:",
+    "tada": ":tada:",
+}
 FIELDS = ["teamId", "teamName", "submissionDate", "score"]
 
 
@@ -129,7 +135,7 @@ class Competition(commands.Cog):
                 team_name=team_name,
                 max_team_size=matched_comp["maxTeamSize"],
                 max_daily_subs=matched_comp["maxDailySubmissions"],
-                merger_deadline=matched_comp["mergerDeadline"]
+                merger_deadline=matched_comp["mergerDeadline"],
             ).save()
 
             await general_channel.send("@here New competition created! @here Άτε κοπέλια..!")
@@ -170,11 +176,11 @@ class Competition(commands.Cog):
     async def addteammate(self, ctx, team_mate: str):
         """
         Adds teammate to competition. (should be run within competition category)
-        
+
         Parameters:
             team_mate (str): discord username of teammate to add
         """
-        
+
         category = ctx.channel.category.name
         comp = Comp.objects.get({"name": category})
         if comp is None:
@@ -209,7 +215,7 @@ class Competition(commands.Cog):
     async def addteammate_error(self, ctx, error):
         if isinstance(error.original, NotInCompCategoryException):
             await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
-    
+
     @comp.command(aliases=["teamname"])
     async def set_team_name(self, ctx, team_name: str):
         category = ctx.channel.category.name
@@ -217,7 +223,7 @@ class Competition(commands.Cog):
         if comp is None:
             raise NotInCompCategoryException
 
-        if len(comp.team_name) == 1: # default value is " "
+        if len(comp.team_name) == 1:  # default value is " "
             comp.team_name = team_name
             comp.save()
             general = discord.utils.get(ctx.channel.category.channels, name="general")
@@ -230,7 +236,9 @@ class Competition(commands.Cog):
         if isinstance(error.original, NotInCompCategoryException):
             await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
         elif isinstance(error.original, TeamAlreadyHasNameException):
-            await ctx.channel.send(f"Άρκησες ρε φίλε! This team already has a name and its... drum roll please {error.original.team_name} {EMOJIS['tada']}")
+            await ctx.channel.send(
+                f"Άρκησες ρε φίλε! This team already has a name and its... drum roll please {error.original.team_name} {EMOJIS['tada']}"
+            )
 
     @comp.command()
     @commands.has_permissions(manage_channels=True, manage_roles=True)
