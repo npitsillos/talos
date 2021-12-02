@@ -16,7 +16,7 @@ jobs:
         ref: ${{ github.ref }}
     - name: Check container
       run: |
-        cd talos
+        cd ${{ GITHUB_WORKSPACE }}
         docker-compose -f docker-compose.yml up --build -d
   deploy:
     needs: stage
