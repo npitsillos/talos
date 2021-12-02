@@ -6,7 +6,21 @@ on:
     branches: [talos-dev]
 
 jobs:
+  stage:
+    - name: Stage Talos on Github Ubuntu Image
+      runs-on: ubuntu-latest
+      steps:
+      - name: Checkout Triggering Branch
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.ref }}
+        run: |
+          cd talos
+          docker-compose -f docker-compose.yml up --build -d
+      
+
   deploy:
+    needs: stage
     name: Deploy to Amazon EC2
     runs-on: ubuntu-latest
     env:
@@ -17,9 +31,6 @@ jobs:
       TALOSBOT_DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
 
     steps:
-    - uses: actions/checkout@v2
-      with:
-        ref: ${{ github.ref }}
     - name: Deploy Talos
       run: |
         mkdir -p ~/.ssh
