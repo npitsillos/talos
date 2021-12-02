@@ -16,3 +16,7 @@ class TutorialAlreadyExistsException(Exception):
 
 class NotInCompCategoryException(Exception):
     pass
+
+class TeamAlreadyHasNameException(Exception):
+    def __init__(self, team_name, *args, **kwargs):
+        self.team_name = team_name
