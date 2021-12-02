@@ -1,9 +1,9 @@
 name: talos-deploy
 on:
   push:
-    branches: [main]
+    branches: [main, talos-dev]
   pull_request:
-    branches: [main]
+    branches: [talos-dev]
 
 jobs:
   deploy:
@@ -11,11 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TALOSBOT_DB_URL: mongodb://mongo/talosbot
-      TALOSBOT_GIT_REPO: https://github.com/npitsillos/talosbot.git
+      TALOSBOT_GIT_REPO: https://github.com/npitsillos/talos.git
       TALOSBOT_ADMIN_ROLE: mastros
       TALOSBOT_COMMAND_PREFIX: '!'
       TALOSBOT_DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
+
     steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: "${{ GITHUB_REF }}"
     - name: Deploy Talos
       run: |
         mkdir -p ~/.ssh
