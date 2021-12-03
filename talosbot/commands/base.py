@@ -1,30 +1,11 @@
 import logging
 import discord
 
-logger = logging.getLogger(__name__)
-
+from talosbot.helpers import get_competition_embed
 from talosbot.db_models import Comp
 
-EMOJIS = {
-    "question": ":question:",
-    "right": ":point_right:",
-    "calendar": ":calendar:",
-    "worried": ":worried:",
-    "tada": ":tada:",
-}
+logger = logging.getLogger(__name__)
 
-def get_competition_embed(comp):
-    comp_desc = comp.description
-    deadline = comp.deadline
-    description = (
-        f"Team Name: {comp.team_name}\n"
-        f"Competition DB name {comp.name}\n"
-        f"{EMOJIS['question']} {comp_desc}\n"
-        f"{EMOJIS['calendar']} Deadline: {deadline}\n"
-        f"{len(comp.team_members)}/{comp.max_team_size} Members"
-    )
-    emb = discord.Embed(title=' '.join(comp.name.split('-')).title(), description=description, url=comp.url, colour=4387968)
-    return emb
 
 
 class BaseCommandsMixin:
@@ -56,7 +37,7 @@ class BaseCommandsMixin:
             for comp in comps:
                 if not all:
                     if len(comp.team_members) == comp.max_team_size: continue
-                comp_emb = get_competition_embed(comp)
+                comp_emb = get_competition_embed(comp, ["team_name", "name", "deadline", "team_members"], title_field="name")
                 await ctx.channel.send(embed=comp_emb)
             
         @bot.command()

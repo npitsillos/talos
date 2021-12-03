@@ -9,6 +9,7 @@ from typing import Optional
 from difflib import SequenceMatcher
 from talosbot.db_models import Comp
 from discord.ext import commands, tasks
+from talosbot.helpers import get_competition_embed
 from talosbot.helpers import get_team_entry_from_leaderboard
 from kaggle.api.kaggle_api_extended import KaggleApi
 from talosbot.exceptions import (
@@ -22,13 +23,6 @@ from talosbot.exceptions import (
 logger = logging.getLogger(__name__)
 
 CATEGORIES = ["featured", "research", "recruitment", "gettingStarted", "masters", "playground"]
-EMOJIS = {
-    "question": ":question:",
-    "right": ":point_right:",
-    "calendar": ":calendar:",
-    "worried": ":worried:",
-    "tada": ":tada:",
-}
 FIELDS = ["teamId", "teamName", "submissionDate", "score"]
 
 
@@ -40,18 +34,6 @@ class Competition(commands.Cog):
     def init_api_client(self):
         self.api = KaggleApi()
         self.api.authenticate()
-
-    def _get_competition_embed(self, comp):
-        comp_desc = comp["description"]
-        reward = comp["reward"]
-        deadline = comp["deadline"].strftime("%d/%m/%y")
-        description = (
-            f"{EMOJIS['question']} {comp_desc}\n"
-            f"{EMOJIS['right']} Reward: {reward}\n"
-            f"{EMOJIS['calendar']} Deadline: {deadline}"
-        )
-        emb = discord.Embed(title=comp["title"], description=description, url=comp["url"], colour=4387968)
-        return emb
 
     @commands.group()
     async def comp(self, ctx):
@@ -81,7 +63,7 @@ class Competition(commands.Cog):
         comps = self.api.competitions_list(category="featured")
         latest_comps = [comp.__dict__ for comp in comps[:num]]
         for latest_comp in latest_comps:
-            emb = self._get_competition_embed(latest_comp)
+            emb = get_competition_embed(latest_comp, ["description", "reward", "deadline"])
             await ctx.channel.send(embed=emb)
 
     @comp.error
@@ -107,7 +89,7 @@ class Competition(commands.Cog):
         matched_comp = None
         for latest_comp in latest_comps:
             matcher = SequenceMatcher(None, comp_name, latest_comp["ref"])
-            longest_match = matcher.find_longest_match(0, len(comp_name), 0, len(latest_comp["title"])).size
+            longest_match = matcher.find_longest_match(0, len(comp_name), 0, len(latest_comp["ref"])).size
             if longest_match > max_longest_match:
                 max_longest_match = longest_match
                 matched_comp = latest_comp
@@ -217,6 +199,12 @@ class Competition(commands.Cog):
 
     @comp.command(aliases=["teamname"])
     async def set_team_name(self, ctx, team_name: str):
+        """
+        Sets the team name.
+
+        Parameters:
+            team_name (str)
+        """
         category = ctx.channel.category.name
         comp = Comp.objects.get({"name": category})
 
