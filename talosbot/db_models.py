@@ -19,6 +19,7 @@ class BotConfig(MongoModel):
 
 class Comp(MongoModel):
     name = fields.CharField(required=True)
+    description = fields.CharField()
     created_at = fields.DateTimeField(required=True)
     deadline = fields.DateTimeField()
     merger_deadline = fields.DateTimeField()

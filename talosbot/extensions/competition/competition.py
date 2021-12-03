@@ -1,5 +1,8 @@
+import os
 import logging
+import asyncio
 import discord
+import requests
 import datetime
 
 from typing import Optional
@@ -12,8 +15,8 @@ from talosbot.exceptions import (
     InvalidCategoryException,
     CompetitionAlreadyExistsException,
     CompetitionAlreadyFinishedException,
-    NotInCompCategoryException,
     TeamAlreadyHasNameException,
+    MaxSubmissionsReachedException,
 )
 
 logger = logging.getLogger(__name__)
@@ -129,6 +132,7 @@ class Competition(commands.Cog):
 
             Comp(
                 name=category,
+                description=matched_comp["description"],
                 url=matched_comp["url"],
                 created_at=datetime.datetime.now(),
                 deadline=matched_comp["deadline"],
@@ -136,6 +140,7 @@ class Competition(commands.Cog):
                 max_team_size=matched_comp["maxTeamSize"],
                 max_daily_subs=matched_comp["maxDailySubmissions"],
                 merger_deadline=matched_comp["mergerDeadline"],
+                team_members=[ctx.author.name]
             ).save()
 
             await general_channel.send("@here New competition created! @here Άτε κοπέλια..!")
@@ -154,22 +159,19 @@ class Competition(commands.Cog):
         """
         category = ctx.channel.category.name
         comp = Comp.objects.get({"name": category})
-        if comp is None:
-            raise NotInCompCategoryException
-        else:
-            leaderboard_results = self.api.competition_leaderboard_view(category)
-            if leaderboard_results:
-                comp = Comp.objects.get({"name": category})
-                team_ranking = get_team_entry_from_leaderboard(leaderboard_results, comp.team_name)
-                await ctx.channel.send("Πάμε καλά;;")
-                team_ranking_vals = {key: getattr(team_ranking, key) for key in FIELDS}
-                await ctx.channel.send(
-                    f"Place: {team_ranking_vals[FIELDS[0]]}, Last submission date: {team_ranking_vals[2]}, Score: {team_ranking_vals[FIELDS[3]]}"
-                )
+        leaderboard_results = self.api.competition_leaderboard_view(category)
+        if leaderboard_results:
+            comp = Comp.objects.get({"name": category})
+            team_ranking = get_team_entry_from_leaderboard(leaderboard_results, comp.team_name)
+            await ctx.channel.send("Πάμε καλά;;")
+            team_ranking_vals = {key: getattr(team_ranking, key) for key in FIELDS}
+            await ctx.channel.send(
+                f"Place: {team_ranking_vals[FIELDS[0]]}, Last submission date: {team_ranking_vals[2]}, Score: {team_ranking_vals[FIELDS[3]]}"
+            )
 
     @show_ranking.error
     async def show_ranking_error(self, ctx, error):
-        if isinstance(error.original, NotInCompCategoryException):
+        if isinstance(error.original, Comp.DoesNotExist):
             await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
 
     @comp.command()
@@ -183,45 +185,40 @@ class Competition(commands.Cog):
 
         category = ctx.channel.category.name
         comp = Comp.objects.get({"name": category})
-        if comp is None:
-            raise NotInCompCategoryException
+        comp = Comp.objects.get({"name": category})
+        if team_mate in comp.team_members:
+            await ctx.channel.send(f"{team_mate} is already a member of the competition's team")
         else:
-            comp = Comp.objects.get({"name": category})
-            if team_mate in comp.team_members:
-                await ctx.channel.send(f"{team_mate} is already a member of the competition's team")
-            else:
-                if len(comp.team_members) < comp.max_team_size:
+            if len(comp.team_members) < comp.max_team_size:
+                general = discord.utils.get(ctx.channel.category.channels, name="general")
+                user = None
+                for guild in self.bot.guilds:
+                    for member in guild.members:
+                        if member.name == team_mate:
+                            user = member
+                            break
+                if user:
                     comp.team_members.append(team_mate)
                     comp.save()
-                    general = discord.utils.get(ctx.channel.category.channels, name="general")
-                    user = None
-                    for guild in self.bot.guilds:
-                        for member in guild.members:
-                            if member.name == team_mate:
-                                user = member
-                                break
-                    if user:
-                        comp_role = discord.utils.get(ctx.guild.roles, name=f"Comp-{category}")
-                        await user.add_roles(comp_role)
-                        await general.send(
-                            f"{user.mention} you have been added to {comp.name} by {ctx.message.author.mention}. Good luck!"
-                        )
-                    else:
-                        await ctx.channel.send("Ένηβρα έτσι παίχτη... User not found!")
+                    comp_role = discord.utils.get(ctx.guild.roles, name=f"Comp-{category}")
+                    await user.add_roles(comp_role)
+                    await general.send(
+                        f"{user.mention} you have been added to {comp.name} by {ctx.message.author.mention}. Good luck!"
+                    )
                 else:
-                    await ctx.channel.send(f"Team is already at maximum capacity... {EMOJIS['worried']}")
+                    await ctx.channel.send("Ένηβρα έτσι παίχτη... User not found!")
+            else:
+                await ctx.channel.send(f"Team is already at maximum capacity... {EMOJIS['worried']}")
 
     @addteammate.error
     async def addteammate_error(self, ctx, error):
-        if isinstance(error.original, NotInCompCategoryException):
+        if isinstance(error.original, Comp.DoesNotExist):
             await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
 
     @comp.command(aliases=["teamname"])
     async def set_team_name(self, ctx, team_name: str):
         category = ctx.channel.category.name
         comp = Comp.objects.get({"name": category})
-        if comp is None:
-            raise NotInCompCategoryException
 
         if len(comp.team_name) == 1:  # default value is " "
             comp.team_name = team_name
@@ -233,7 +230,7 @@ class Competition(commands.Cog):
 
     @set_team_name.error
     async def set_team_name_error(self, ctx, error):
-        if isinstance(error.original, NotInCompCategoryException):
+        if isinstance(error.original, Comp.DoesNotExist):
             await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
         elif isinstance(error.original, TeamAlreadyHasNameException):
             await ctx.channel.send(
@@ -256,6 +253,62 @@ class Competition(commands.Cog):
         comp.save()
 
         await ctx.channel.send("Good job on the competition everyone! Επήαμε τα καλά;")
+
+    @finish.error
+    async def finish_error(self, ctx, error):
+        if isinstance(error.original, Comp.DoesNotExist):
+            await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
+
+    @comp.command()
+    async def submit(self, ctx, desc: Optional[str]=""):
+        """
+        Makes a submission to the category's competition.
+
+        Parameters:
+            description (str): optional description of submission made
+        """
+        
+        category = ctx.channel.category.name
+        comp = Comp.objects.get({"name": category})
+
+        if comp.subs_today == comp.max_daily_subs:
+            raise MaxSubmissionsReachedException
+        await ctx.channel.send("Please upload a submission file...")
+
+        async def wait_for_file():
+            """
+            Coroutine that waits for a file to be uploaded
+            """
+            url = None
+            filename = None
+            try:
+                message = await self.bot.wait_for(
+                    "message",
+                    timeout=60.0
+                )
+            except asyncio.TimeoutError:
+                await ctx.channel.send("Time out... Try submitting again.")
+            else:
+                await ctx.channel.send("Submission succesfull!")
+                url = message.attachments[0].url
+                filename = message.attachments[0].filename
+            return url, filename
+        
+        sub_file_url, filename = await self.bot.loop.create_task(wait_for_file())
+        sub_file_content = requests.get(sub_file_url).content
+        local_file = os.path.join("/tmp", filename)
+        with open(local_file, "wb") as outfile:
+            outfile.write(sub_file_content)
+        submit_result = self.api.competition_submit(local_file, desc, comp.name)
+
+        await ctx.channel.send(repr(submit_result))
+
+    @submit.error
+    async def submit_error(self, ctx, error):
+        if isinstance(error.original, Comp.DoesNotExist):
+            await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
+        elif isinstance(error, MaxSubmissionsReachedException):
+            await ctx.channel.send("Πάππαλα τα σαμπμίσσιονς... No more submissions left for today.")
 
     @tasks.loop(hours=24)
     async def update_subs(self):

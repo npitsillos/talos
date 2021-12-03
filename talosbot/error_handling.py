@@ -7,6 +7,7 @@ from discord.ext.commands.errors import (
     NoPrivateMessage,
     MissingRole,
     MissingRequiredArgument,
+    CommandInvokeError,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ def hook_error_handlers(bot):
         elif isinstance(error, NoPrivateMessage):
             await ctx.channel.send("This command can not be send in a private message.")
         elif isinstance(error, MissingRole):
-            await ctx.channe.send("You don't have the required role to run this command.")
+            await ctx.channel.send("You don't have the required role to run this command.")
         elif isinstance(error, MissingRequiredArgument):
             await ctx.send_help(ctx.command)
         else:
