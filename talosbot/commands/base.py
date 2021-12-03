@@ -1,30 +1,10 @@
 import logging
 import discord
 
-logger = logging.getLogger(__name__)
-
+from talosbot.helpers import get_competition_embed
 from talosbot.db_models import Comp
 
-EMOJIS = {
-    "question": ":question:",
-    "right": ":point_right:",
-    "calendar": ":calendar:",
-    "worried": ":worried:",
-    "tada": ":tada:",
-}
-
-def get_competition_embed(comp):
-    comp_desc = comp.description
-    deadline = comp.deadline
-    description = (
-        f"Team Name: {comp.team_name}\n"
-        f"Competition DB name {comp.name}\n"
-        f"{EMOJIS['question']} {comp_desc}\n"
-        f"{EMOJIS['calendar']} Deadline: {deadline}\n"
-        f"{len(comp.team_members)}/{comp.max_team_size} Members"
-    )
-    emb = discord.Embed(title=' '.join(comp.name.split('-')).title(), description=description, url=comp.url, colour=4387968)
-    return emb
+logger = logging.getLogger(__name__)
 
 
 class BaseCommandsMixin:
@@ -43,7 +23,7 @@ class BaseCommandsMixin:
             await ctx.channel.send(f"Κάμε με πιο έξυπνο! {bot.config.GIT_REPO}")
 
         @bot.command()
-        async def showcomps(ctx, deadline_order = 1, all = False):
+        async def showcomps(ctx, deadline_order=1, all=False):
             """
             Shows all competitions currently attempted by members of the server.
             By default does not display competitions with full teams.
@@ -55,17 +35,20 @@ class BaseCommandsMixin:
             comps = Comp.objects.all().order_by([("deadline", 1)])
             for comp in comps:
                 if not all:
-                    if len(comp.team_members) == comp.max_team_size: continue
-                comp_emb = get_competition_embed(comp)
+                    if len(comp.team_members) == comp.max_team_size:
+                        continue
+                comp_emb = get_competition_embed(
+                    comp, ["team_name", "name", "deadline", "team_members"], title_field="name"
+                )
                 await ctx.channel.send(embed=comp_emb)
-            
+
         @bot.command()
         async def join(ctx, comp_name):
             """
-                Sends a request to join a team.
+            Sends a request to join a team.
 
-                Parameters:
-                    comp_name (str): competition name in slug format
+            Parameters:
+                comp_name (str): competition name in slug format
             """
 
             comp = Comp.objects.get({"name": comp_name})

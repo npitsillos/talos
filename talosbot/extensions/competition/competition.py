@@ -9,6 +9,7 @@ from typing import Optional
 from difflib import SequenceMatcher
 from talosbot.db_models import Comp
 from discord.ext import commands, tasks
+from talosbot.helpers import get_competition_embed
 from talosbot.helpers import get_team_entry_from_leaderboard
 from kaggle.api.kaggle_api_extended import KaggleApi
 from talosbot.exceptions import (
@@ -22,13 +23,6 @@ from talosbot.exceptions import (
 logger = logging.getLogger(__name__)
 
 CATEGORIES = ["featured", "research", "recruitment", "gettingStarted", "masters", "playground"]
-EMOJIS = {
-    "question": ":question:",
-    "right": ":point_right:",
-    "calendar": ":calendar:",
-    "worried": ":worried:",
-    "tada": ":tada:",
-}
 FIELDS = ["teamId", "teamName", "submissionDate", "score"]
 
 
@@ -40,18 +34,6 @@ class Competition(commands.Cog):
     def init_api_client(self):
         self.api = KaggleApi()
         self.api.authenticate()
-
-    def _get_competition_embed(self, comp):
-        comp_desc = comp["description"]
-        reward = comp["reward"]
-        deadline = comp["deadline"].strftime("%d/%m/%y")
-        description = (
-            f"{EMOJIS['question']} {comp_desc}\n"
-            f"{EMOJIS['right']} Reward: {reward}\n"
-            f"{EMOJIS['calendar']} Deadline: {deadline}"
-        )
-        emb = discord.Embed(title=comp["title"], description=description, url=comp["url"], colour=4387968)
-        return emb
 
     @commands.group()
     async def comp(self, ctx):
@@ -81,7 +63,7 @@ class Competition(commands.Cog):
         comps = self.api.competitions_list(category="featured")
         latest_comps = [comp.__dict__ for comp in comps[:num]]
         for latest_comp in latest_comps:
-            emb = self._get_competition_embed(latest_comp)
+            emb = get_competition_embed(latest_comp, ["description", "reward", "deadline"])
             await ctx.channel.send(embed=emb)
 
     @comp.error
@@ -107,7 +89,7 @@ class Competition(commands.Cog):
         matched_comp = None
         for latest_comp in latest_comps:
             matcher = SequenceMatcher(None, comp_name, latest_comp["ref"])
-            longest_match = matcher.find_longest_match(0, len(comp_name), 0, len(latest_comp["title"])).size
+            longest_match = matcher.find_longest_match(0, len(comp_name), 0, len(latest_comp["ref"])).size
             if longest_match > max_longest_match:
                 max_longest_match = longest_match
                 matched_comp = latest_comp
@@ -140,7 +122,7 @@ class Competition(commands.Cog):
                 max_team_size=matched_comp["maxTeamSize"],
                 max_daily_subs=matched_comp["maxDailySubmissions"],
                 merger_deadline=matched_comp["mergerDeadline"],
-                team_members=[ctx.author.name]
+                team_members=[ctx.author.name],
             ).save()
 
             await general_channel.send("@here New competition created! @here Άτε κοπέλια..!")
@@ -208,7 +190,7 @@ class Competition(commands.Cog):
                 else:
                     await ctx.channel.send("Ένηβρα έτσι παίχτη... User not found!")
             else:
-                await ctx.channel.send(f"Team is already at maximum capacity... {EMOJIS['worried']}")
+                await ctx.channel.send("Team is already at maximum capacity... :worried:")
 
     @addteammate.error
     async def addteammate_error(self, ctx, error):
@@ -217,6 +199,12 @@ class Competition(commands.Cog):
 
     @comp.command(aliases=["teamname"])
     async def set_team_name(self, ctx, team_name: str):
+        """
+        Sets the team name.
+
+        Parameters:
+            team_name (str)
+        """
         category = ctx.channel.category.name
         comp = Comp.objects.get({"name": category})
 
@@ -234,7 +222,7 @@ class Competition(commands.Cog):
             await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
         elif isinstance(error.original, TeamAlreadyHasNameException):
             await ctx.channel.send(
-                f"Άρκησες ρε φίλε! This team already has a name and its... drum roll please {error.original.team_name} {EMOJIS['tada']}"
+                f"Άρκησες ρε φίλε! This team already has a name and its... drum roll please {error.original.team_name}:tada:"
             )
 
     @comp.command()
@@ -260,14 +248,14 @@ class Competition(commands.Cog):
             await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
 
     @comp.command()
-    async def submit(self, ctx, desc: Optional[str]=""):
+    async def submit(self, ctx, desc: Optional[str] = ""):
         """
         Makes a submission to the category's competition.
 
         Parameters:
             description (str): optional description of submission made
         """
-        
+
         category = ctx.channel.category.name
         comp = Comp.objects.get({"name": category})
 
@@ -282,10 +270,7 @@ class Competition(commands.Cog):
             url = None
             filename = None
             try:
-                message = await self.bot.wait_for(
-                    "message",
-                    timeout=60.0
-                )
+                message = await self.bot.wait_for("message", timeout=60.0)
             except asyncio.TimeoutError:
                 await ctx.channel.send("Time out... Try submitting again.")
             else:
@@ -293,7 +278,7 @@ class Competition(commands.Cog):
                 url = message.attachments[0].url
                 filename = message.attachments[0].filename
             return url, filename
-        
+
         sub_file_url, filename = await self.bot.loop.create_task(wait_for_file())
         sub_file_content = requests.get(sub_file_url).content
         local_file = os.path.join("/tmp", filename)
