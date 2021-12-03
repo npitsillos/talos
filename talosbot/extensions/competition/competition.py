@@ -190,7 +190,7 @@ class Competition(commands.Cog):
                 else:
                     await ctx.channel.send("Ένηβρα έτσι παίχτη... User not found!")
             else:
-                await ctx.channel.send(f"Team is already at maximum capacity... :worried:")
+                await ctx.channel.send("Team is already at maximum capacity... :worried:")
 
     @addteammate.error
     async def addteammate_error(self, ctx, error):
