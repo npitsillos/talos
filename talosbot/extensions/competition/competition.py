@@ -190,7 +190,7 @@ class Competition(commands.Cog):
                 else:
                     await ctx.channel.send("Ένηβρα έτσι παίχτη... User not found!")
             else:
-                await ctx.channel.send(f"Team is already at maximum capacity... {EMOJIS['worried']}")
+                await ctx.channel.send(f"Team is already at maximum capacity... :worried:")
 
     @addteammate.error
     async def addteammate_error(self, ctx, error):
@@ -222,7 +222,7 @@ class Competition(commands.Cog):
             await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
         elif isinstance(error.original, TeamAlreadyHasNameException):
             await ctx.channel.send(
-                f"Άρκησες ρε φίλε! This team already has a name and its... drum roll please {error.original.team_name} {EMOJIS['tada']}"
+                f"Άρκησες ρε φίλε! This team already has a name and its... drum roll please {error.original.team_name}:tada:"
             )
 
     @comp.command()
