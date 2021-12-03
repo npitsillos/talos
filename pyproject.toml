@@ -13,6 +13,7 @@ pymodm = "^0.4.3"
 texttable = "^1.6.4"
 kaggle = "^1.5.12"
 colorama = "^0.4.4"
+requests = "^2.26.0"
 
 [tool.poetry.dev-dependencies]
 black = "^21.11b1"

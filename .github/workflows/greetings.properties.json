@@ -1,7 +1,0 @@
- {
-    "name": "greetings",
-    "description": "Greets users who are first time contributors to the repo",
-    "iconName": "octicon smiley",
-    "categories": ["Automation", "SDLC"],
-    "author": "npitsillos"
-}

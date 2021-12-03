@@ -21,3 +21,7 @@ class NotInCompCategoryException(Exception):
 class TeamAlreadyHasNameException(Exception):
     def __init__(self, team_name, *args, **kwargs):
         self.team_name = team_name
+
+
+class MaxSubmissionsReachedException(Exception):
+    pass

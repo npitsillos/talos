@@ -1,5 +1,8 @@
+import os
 import logging
+import asyncio
 import discord
+import requests
 import datetime
 
 from typing import Optional
@@ -14,6 +17,7 @@ from talosbot.exceptions import (
     CompetitionAlreadyFinishedException,
     NotInCompCategoryException,
     TeamAlreadyHasNameException,
+    MaxSubmissionsReachedException,
 )
 
 logger = logging.getLogger(__name__)
@@ -256,6 +260,59 @@ class Competition(commands.Cog):
         comp.save()
 
         await ctx.channel.send("Good job on the competition everyone! Επήαμε τα καλά;")
+
+    @comp.command()
+    async def submit(self, ctx, desc: Optional[str]=""):
+        """
+        Makes a submission to the category's competition.
+
+        Parameters:
+            description (str): optional description of submission made
+        """
+        
+        category = ctx.channel.category.name
+        comp = Comp.objects.get({"name": category})
+        if comp is None:
+            raise NotInCompCategoryException
+        
+        if comp.subs_today == comp.max_daily_subs:
+            raise MaxSubmissionsReachedException
+        await ctx.channel.send("Please upload a submission file...")
+
+        async def wait_for_file():
+            """
+            Coroutine that waits for a file to be uploaded
+            """
+            url = None
+            filename = None
+            try:
+                message = await self.bot.wait_for(
+                    "message",
+                    timeout=60.0
+                )
+            except asyncio.TimeoutError:
+                await ctx.channel.send("Time out... Try submitting again.")
+            else:
+                await ctx.channel.send("Submission succesfull!")
+                url = message.attachments[0].url
+                filename = message.attachments[0].filename
+            return url, filename
+        
+        sub_file_url, filename = await self.bot.loop.create_task(wait_for_file())
+        sub_file_content = requests.get(sub_file_url).content
+        local_file = os.path.join("/tmp", filename)
+        with open(local_file, "wb") as outfile:
+            outfile.write(sub_file_content)
+        submit_result = self.api.competition_submit(local_file, desc, comp.name)
+
+        await ctx.channel.send(repr(submit_result))
+
+    @submit.error
+    async def submit_error(self, ctx, error):
+        if isinstance(error.original, NotInCompCategoryException):
+            await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
+        elif isinstance(error, MaxSubmissionsReachedException):
+            await ctx.channel.send("Πάππαλα τα σαμπμίσσιονς... No more submissions left for today.")
 
     @tasks.loop(hours=24)
     async def update_subs(self):

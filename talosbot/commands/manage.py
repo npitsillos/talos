@@ -39,7 +39,8 @@ class ManageCommandsMixin:
             if comps.count() > 0:
                 names = [comp.name for comp in comps]
                 for name in names:
-                    await self.dropcomp(ctx, name)
+                    drop_cmd = bot.get_command("manage dropcomp")
+                    await ctx.invoke(drop_cmd, name)
             else:
                 await ctx.channel.send("There are no competitions stored in the DB")
 
