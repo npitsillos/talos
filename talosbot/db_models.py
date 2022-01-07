@@ -29,7 +29,7 @@ class Comp(MongoModel):
     max_team_size = fields.IntegerField()
     max_daily_subs = fields.IntegerField()
     subs_today = fields.IntegerField(default=0)
-
+    finished_on = fields.DateTimeField()
 
 class TutorialModel(MongoModel):
     name = fields.CharField(required=True)

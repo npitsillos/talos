@@ -7,7 +7,6 @@ from talosbot.db_models import Comp
 logger = logging.getLogger(__name__)
 
 
-
 class BaseCommandsMixin:
     def load_commands(self):
 
@@ -63,3 +62,11 @@ class BaseCommandsMixin:
         async def join_error(ctx, error):
             if isinstance(error.original, Comp.DoesNotExist):
                 await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
+
+        @bot.command()
+        async def status(ctx):
+            """
+            Shows all ongoing and finished competitions in the server.
+            """
+
+            

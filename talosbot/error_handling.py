@@ -7,7 +7,6 @@ from discord.ext.commands.errors import (
     NoPrivateMessage,
     MissingRole,
     MissingRequiredArgument,
-    CommandInvokeError,
 )
 
 logger = logging.getLogger(__name__)
