@@ -40,7 +40,7 @@ class AbstractConfig:
             AbstractConfig.__instance__ = object.__new__(cls)
             AbstractConfig.__instance__._copy_from_class()
             AbstractConfig.__instance__._load_from_db()
-            
+
         return AbstractConfig.__instance__
 
     def _copy_from_class(self) -> None:
@@ -64,7 +64,7 @@ class AbstractConfig:
     def _get_configurable_props_from_cls(self) -> List[Any]:
         props = inspect.getmembers(self.__class__, lambda a: not (inspect.isroutine(a)))
         props = filter(lambda a: isinstance(getattr(self.__class__, a[0]), ConfigurableProperty), props)
-        
+
         return map(lambda a: (a[0], a[1].value), props)
 
     def _get_or_create_config_from_db(self) -> BotConfig:
