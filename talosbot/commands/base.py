@@ -83,7 +83,7 @@ class BaseCommandsMixin:
             if len(status_response) == 0:
                 await ctx.channel.send("No competitions in server!")
                 return
-            
+
             for chunk in chunkify(status_response, 1900):
                 emb = discord.Embed(description=chunk, colour=4387968)
                 await ctx.channel.send(embed=emb)

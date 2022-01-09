@@ -42,8 +42,9 @@ class Comp(MongoModel):
             + f"\n**Deadline:**\t{deadline}\n**Team Name:**\t{self.team_name}\n:busts_in_silhouette:\t{members}\n"
             + f"**Team Size:**\t{self.max_team_size}\n:link:\t{self.url}"
         )
-    
+
         return status
+
 
 class TutorialModel(MongoModel):
     name = fields.CharField(required=True)
