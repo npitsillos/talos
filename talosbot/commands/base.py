@@ -77,7 +77,6 @@ class BaseCommandsMixin:
             comps = sorted([c for c in comps], key=lambda x: x.created_at)
             status_response = ""
             for comp in comps:
-                comp_role = discord.utils.get(ctx.guild.roles, name=f"Comp-{comp.name}")
                 status_response += comp.status()
 
             if len(status_response) == 0:
