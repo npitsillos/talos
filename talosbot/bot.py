@@ -21,7 +21,6 @@ class TalosBot(Bot, BaseCommandsMixin):
     def __init__(self, *args, **kwargs):
 
         env_path = os.path.join(Path(sys.modules[__name__].__file__).resolve().parent.parent, ".env")
-
         load_dotenv(dotenv_path=env_path, verbose=True)
         env = os.environ.get("TALOSBOT_ENV", "dev")
         from talosbot.config import bot_config

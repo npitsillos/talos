@@ -5,7 +5,7 @@ import logging
 from os import environ
 from colorama import Fore
 from itertools import chain
-from typing import Any, List, NoReturn
+from typing import Any, List
 from talosbot.db_models import BotConfig
 from pymodm.errors import ValidationError
 
@@ -40,10 +40,10 @@ class AbstractConfig:
             AbstractConfig.__instance__ = object.__new__(cls)
             AbstractConfig.__instance__._copy_from_class()
             AbstractConfig.__instance__._load_from_db()
-
+            
         return AbstractConfig.__instance__
 
-    def _copy_from_class(self) -> NoReturn:
+    def _copy_from_class(self) -> None:
         """Copies all attributes from class to instance"""
         dynamic_props = self._get_configurable_props_from_cls()
         static_props = self._get_static_props_from_cls()
@@ -64,7 +64,7 @@ class AbstractConfig:
     def _get_configurable_props_from_cls(self) -> List[Any]:
         props = inspect.getmembers(self.__class__, lambda a: not (inspect.isroutine(a)))
         props = filter(lambda a: isinstance(getattr(self.__class__, a[0]), ConfigurableProperty), props)
-
+        
         return map(lambda a: (a[0], a[1].value), props)
 
     def _get_or_create_config_from_db(self) -> BotConfig:
@@ -84,16 +84,17 @@ class AbstractConfig:
                 sys.exit(1)
         return config
 
-    def _load_from_db(self) -> NoReturn:
+    def _load_from_db(self) -> None:
         dynamic_props = self._get_configurable_props_from_cls()
         config_in_db = self._get_or_create_config_from_db()
+        logger.info(config_in_db.ADMIN_ROLE)
         self.config_in_db = config_in_db
         for prop, value in dynamic_props:
             saved_value = getattr(config_in_db, prop, None)
             if saved_value is not None and value != saved_value:
                 setattr(self, prop, saved_value)
 
-    def save(self) -> NoReturn:
+    def save(self) -> None:
         """Saves current instance config to database"""
         config_in_db_props = inspect.getmembers(self.config_in_db, lambda a: not (inspect.isroutine(a)))
         for prop in self._get_configurable_props_from_cls():
