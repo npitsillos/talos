@@ -10,8 +10,18 @@ EMOJIS = {
     "worried": ":worried:",
     "tada": ":tada:",
     "name": ":information_source:",
-    "members": ":man_mage:"
+    "members": ":man_mage:",
 }
+
+
+def chunkify(text, limit):
+    chunks = []
+    while len(text) > limit:
+        idx = text.index("\n", limit)
+        chunks.append(text[:idx])
+        text = text[idx:]
+    chunks.append(text)
+    return chunks
 
 
 def get_competition_embed(comp, emp_desc_fields, title_field="ref"):
@@ -29,12 +39,12 @@ def get_competition_embed(comp, emp_desc_fields, title_field="ref"):
             value = comp.get(field)
         else:
             value = getattr(comp, field)
-            if len(field.split('_')) > 1:
-                field_strs = field.split('_')
+            if len(field.split("_")) > 1:
+                field_strs = field.split("_")
                 key = field_strs[1]
-                field = ' '.join(field_strs)
+                field = " ".join(field_strs)
         description += f"{EMOJIS[key]}{field.title()}: {value}\n"
-    emb = discord.Embed(title=' '.join(title.split('-')).title(), description=description, url=url, colour=4387968)
+    emb = discord.Embed(title=" ".join(title.split("-")).title(), description=description, url=url, colour=4387968)
     return emb
 
 

@@ -122,7 +122,7 @@ class Competition(commands.Cog):
                 max_team_size=matched_comp["maxTeamSize"],
                 max_daily_subs=matched_comp["maxDailySubmissions"],
                 merger_deadline=matched_comp["mergerDeadline"],
-                team_members=[ctx.author.name]
+                team_members=[ctx.author.name],
             ).save()
 
             await general_channel.send("@here New competition created! @here Άτε κοπέλια..!")
@@ -241,7 +241,7 @@ class Competition(commands.Cog):
         if comp.finished_on is not None:
             raise CompetitionAlreadyArchivedException
 
-        comp.name = f"__ARCHIVED__{comp.name}"
+        comp.name = f"__ARCHIVED__ {comp.name}"
         comp.save()
 
         if comp_role is not None:
@@ -262,14 +262,14 @@ class Competition(commands.Cog):
             await ctx.channel.send("This competition has already finished.")
 
     @comp.command()
-    async def submit(self, ctx, desc: Optional[str]=""):
+    async def submit(self, ctx, desc: Optional[str] = ""):
         """
         Makes a submission to the category's competition.
 
         Parameters:
             description (str): optional description of submission made
         """
-        
+
         category = ctx.channel.category.name
         comp = Comp.objects.get({"name": category})
 
@@ -284,10 +284,7 @@ class Competition(commands.Cog):
             url = None
             filename = None
             try:
-                message = await self.bot.wait_for(
-                    "message",
-                    timeout=60.0
-                )
+                message = await self.bot.wait_for("message", timeout=60.0)
             except asyncio.TimeoutError:
                 await ctx.channel.send("Time out... Try submitting again.")
             else:
@@ -295,7 +292,7 @@ class Competition(commands.Cog):
                 url = message.attachments[0].url
                 filename = message.attachments[0].filename
             return url, filename
-        
+
         sub_file_url, filename = await self.bot.loop.create_task(wait_for_file())
         sub_file_content = requests.get(sub_file_url).content
         local_file = os.path.join("/tmp", filename)
