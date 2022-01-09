@@ -14,6 +14,16 @@ EMOJIS = {
 }
 
 
+def chunkify(text, limit):
+    chunks = []
+    while len(text) > limit:
+        idx = text.index("\n", limit)
+        chunks.append(text[:idx])
+        text = text[idx:]
+    chunks.append(text)
+    return chunks
+
+
 def get_competition_embed(comp, emp_desc_fields, title_field="ref"):
 
     if isinstance(comp, dict):

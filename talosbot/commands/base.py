@@ -1,7 +1,7 @@
 import logging
 import discord
 
-from talosbot.helpers import get_competition_embed
+from talosbot.helpers import get_competition_embed, chunkify
 from talosbot.db_models import Comp
 
 logger = logging.getLogger(__name__)
@@ -65,3 +65,24 @@ class BaseCommandsMixin:
         async def join_error(ctx, error):
             if isinstance(error.original, Comp.DoesNotExist):
                 await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
+
+        @bot.command()
+        async def status(ctx):
+            """
+            Shows all ongoing, finished and archived competitions in the server.
+            """
+
+            comps = Comp.objects.all()
+
+            comps = sorted([c for c in comps], key=lambda x: x.created_at)
+            status_response = ""
+            for comp in comps:
+                status_response += comp.status()
+
+            if len(status_response) == 0:
+                await ctx.channel.send("No competitions in server!")
+                return
+
+            for chunk in chunkify(status_response, 1900):
+                emb = discord.Embed(description=chunk, colour=4387968)
+                await ctx.channel.send(embed=emb)

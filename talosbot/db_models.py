@@ -1,4 +1,5 @@
 import logging
+import datetime
 
 from pymodm import MongoModel, fields
 
@@ -29,6 +30,20 @@ class Comp(MongoModel):
     max_team_size = fields.IntegerField()
     max_daily_subs = fields.IntegerField()
     subs_today = fields.IntegerField(default=0)
+    finished_on = fields.DateTimeField()
+
+    def status(self):
+
+        members = ",".join(self.team_members)
+        deadline = self.deadline if self.deadline > datetime.datetime.now() else "Passed"
+        merger_deadline = self.merger_deadline if self.merger_deadline > datetime.datetime.now() else "Passed"
+        status = (
+            f":triangular_flag_on_post:**\t{self.name}**\n***{self.description}.***\n**Merger Deadline:**\t{merger_deadline}"
+            + f"\n**Deadline:**\t{deadline}\n**Team Name:**\t{self.team_name}\n:busts_in_silhouette:\t{members}\n"
+            + f"**Team Size:**\t{self.max_team_size}\n:link:\t{self.url}"
+        )
+
+        return status
 
 
 class TutorialModel(MongoModel):

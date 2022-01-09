@@ -15,7 +15,7 @@ from kaggle.api.kaggle_api_extended import KaggleApi
 from talosbot.exceptions import (
     InvalidCategoryException,
     CompetitionAlreadyExistsException,
-    CompetitionAlreadyFinishedException,
+    CompetitionAlreadyArchivedException,
     TeamAlreadyHasNameException,
     MaxSubmissionsReachedException,
 )
@@ -227,25 +227,39 @@ class Competition(commands.Cog):
 
     @comp.command()
     @commands.has_permissions(manage_channels=True, manage_roles=True)
-    async def finish(self, ctx, comp_name):
+    async def archive(self, ctx, comp_name):
         """
-        Marks a competition as finished.
+        Marks a competition as finished, archives it in the server and deletes all associated channels and categories.
 
         Parameters:
             comp_name (str): name of the competition to mark as finished
         """
         comp = Comp.objects.get({"name": comp_name})
+        category = discord.utils.get(ctx.guild.categories, name=comp_name)
+        comp_role = discord.utils.get(ctx.guild.roles, name=f"Comp-{comp_name}")
+
         if comp.finished_on is not None:
-            raise CompetitionAlreadyFinishedException
-        comp.finished_on = datetime.datetime.now()
+            raise CompetitionAlreadyArchivedException
+
+        comp.name = f"__ARCHIVED__ {comp.name}"
         comp.save()
+
+        if comp_role is not None:
+            await comp_role.delete()
+        for c in category.channels:
+            await c.delete()
+
+        await category.delete()
 
         await ctx.channel.send("Good job on the competition everyone! Επήαμε τα καλά;")
 
-    @finish.error
-    async def finish_error(self, ctx, error):
+    @archive.error
+    async def archive_error(self, ctx, error):
         if isinstance(error.original, Comp.DoesNotExist):
             await ctx.channel.send("Πάενε μες το κομπετίσιον ρεεε. Run this command in the competition category.")
+
+        if isinstance(error.original, CompetitionAlreadyArchivedException):
+            await ctx.channel.send("This competition has already finished.")
 
     @comp.command()
     async def submit(self, ctx, desc: Optional[str] = ""):
@@ -302,6 +316,16 @@ class Competition(commands.Cog):
         for comp in comps:
             comp.subs_today = 0
             comp.save()
+
+    @tasks.loop(hours=24)
+    async def finish_comps(self):
+
+        comps = Comp.objects.all()
+        comps = list(filter(lambda x: x.finished_on is not None, comps))
+
+        for comp in comps:
+            if comp.deadline <= datetime.datetime.now():
+                comp.finished_on = datetime.datetime.now()
 
 
 def setup(bot):

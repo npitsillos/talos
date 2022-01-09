@@ -6,7 +6,7 @@ class CompetitionAlreadyExistsException(Exception):
     pass
 
 
-class CompetitionAlreadyFinishedException(Exception):
+class CompetitionAlreadyArchivedException(Exception):
     pass
 
 
