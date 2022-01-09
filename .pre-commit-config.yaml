@@ -9,3 +9,5 @@ repos:
     hooks:
     -   id: flake8
         additional_dependencies: [flake8-typing-imports==1.7.0]
+ci:
+    autofix_prs: false
