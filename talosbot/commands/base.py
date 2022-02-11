@@ -1,8 +1,10 @@
+import asyncio
 import logging
 import discord
+import requests
 
 from talosbot.helpers import get_competition_embed, chunkify
-from talosbot.db_models import Comp
+from talosbot.db_models import Comp, UserAuth
 
 logger = logging.getLogger(__name__)
 
@@ -86,3 +88,50 @@ class BaseCommandsMixin:
             for chunk in chunkify(status_response, 1900):
                 emb = discord.Embed(description=chunk, colour=4387968)
                 await ctx.channel.send(embed=emb)
+
+        @bot.command(aliases=["auth"])
+        async def add_auth(ctx):
+            """
+            Prompts user for json file containing their authentication information for supported competition platforms.
+            """
+
+            if not isinstance(ctx.channel, discord.DMChannel):
+                await ctx.channel.send("Please carry out this process in a private channel")
+
+            try:
+                al = UserAuth.objects.all()
+                for a in al:
+                    print(a)
+                UserAuth.objects.get({"user": ctx.author.display_name})
+            except UserAuth.DoesNotExist:
+                pass
+            else:
+                await ctx.author.send("You have already uploaded your authentication information.")
+                return
+            
+            await ctx.author.send("Please upload a json file containing a dictionary with keys the platforms "\
+                "you want to be authenticated on.")
+
+            await ctx.author.send("This file should have the following format:\n```\n{'kaggle': {'username': 'USERNAME', 'key': 'API_KEY'}, 'other_platform': 'other_platform_dict'}\n```")
+            async def wait_for_file():
+                """
+                Coroutine that waits for a file to be uploaded
+                """
+                url = None
+                try:
+                    message = await bot.wait_for("message", timeout=60.0)
+                except asyncio.TimeoutError:
+                    await ctx.author.send("Time out... Try submitting again.")
+                else:
+                    await ctx.author.send("Submission succesfull!")
+                    url = message.attachments[0].url
+                return url
+
+            auth_info_file_url = await bot.loop.create_task(wait_for_file())
+            if auth_info_file_url:
+                auth_info = requests.get(auth_info_file_url).json()
+
+                UserAuth(user=ctx.author.display_name, auth_info=auth_info).save()
+
+                message = await ctx.author.send("User authentication info added")
+                await message.add_reaction("✅")

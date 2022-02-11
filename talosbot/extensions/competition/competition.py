@@ -29,9 +29,12 @@ FIELDS = ["teamId", "teamName", "submissionDate", "score"]
 class Competition(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.init_api_client()
+        self._init_api_clients()
 
-    def init_api_client(self):
+    def _init_api_clients(self):
+        """
+        Initialises API clients that Talos currently supports
+        """
         self.api = KaggleApi()
         self.api.authenticate()
 

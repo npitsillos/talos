@@ -20,6 +20,7 @@ class BotConfig(MongoModel):
 
 class Comp(MongoModel):
     name = fields.CharField(required=True)
+    platform = fields.CharField(required=True)
     description = fields.CharField()
     created_at = fields.DateTimeField(required=True)
     deadline = fields.DateTimeField()
@@ -52,3 +53,8 @@ class TutorialModel(MongoModel):
     url = fields.CharField(required=True)
     difficulty = fields.CharField()
     category = fields.CharField()
+
+
+class UserAuth(MongoModel):
+    user = fields.CharField(required=True)
+    auth_info = fields.DictField(required=True)

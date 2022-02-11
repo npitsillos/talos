@@ -87,7 +87,6 @@ class AbstractConfig:
     def _load_from_db(self) -> None:
         dynamic_props = self._get_configurable_props_from_cls()
         config_in_db = self._get_or_create_config_from_db()
-        logger.info(config_in_db.ADMIN_ROLE)
         self.config_in_db = config_in_db
         for prop, value in dynamic_props:
             saved_value = getattr(config_in_db, prop, None)
