@@ -7,7 +7,7 @@ import datetime
 
 from typing import Optional
 from difflib import SequenceMatcher
-from talosbot.db_models import Comp
+from talosbot.db_models import Comp, UserAuth
 from discord.ext import commands, tasks
 from talosbot.helpers import get_competition_embed
 from talosbot.helpers import get_team_entry_from_leaderboard
@@ -24,27 +24,64 @@ logger = logging.getLogger(__name__)
 
 CATEGORIES = ["featured", "research", "recruitment", "gettingStarted", "masters", "playground"]
 FIELDS = ["teamId", "teamName", "submissionDate", "score"]
+PLATFORMS = {"kaggle": KaggleApi}  # , "aicrowd"]
+
+
+async def is_platfrom_supported(ctx):
+    split_msg = ctx.message.content.split()
+    if len(split_msg) == 1:
+        return False
+    platform = ctx.message.content.split()[1]
+    return platform in PLATFORMS.keys()
 
 
 class Competition(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.init_api_client()
+        self.user_platform_sessions = {key: {} for key in PLATFORMS.keys()}
 
-    def init_api_client(self):
-        self.api = KaggleApi()
-        self.api.authenticate()
+    def _remove_user_auth(self, platform, user_name):
+        self.user_platform_sessions[platform].pop(user_name)
+
+    async def cog_check(self, ctx):
+        """
+        Checks whether the user invoking a subcommand is authenticated in the server. It checks if
+        their credentials of various platforms were added to the server.
+        """
+        try:
+            user_auth = None
+            user_auth = UserAuth.objects.get({"user": ctx.author.display_name})
+        except UserAuth.DoesNotExist:
+            await ctx.channel.send(
+                f"Έν σε ξέρω ρεεε... You are not authenticated. Run `{ctx.cog.bot.command_prefix}auth`."
+            )
+        return user_auth is not None
 
     @commands.group()
-    async def comp(self, ctx):
+    @commands.check(is_platfrom_supported)
+    async def comp(self, ctx, platform):
         """
-        Collection of commands for interacting with Kaggle
+        Collection of commands for interacting with competition platforms.
+
+        plaform\tthe platform to authenticate user on
         """
         self.guild = ctx.guild
         self.gid = ctx.guild.id
 
         if ctx.invoked_subcommand is None:
             await ctx.send("Invalid command passed. Use !help.")
+
+        user_auth = UserAuth.objects.get({"user": ctx.author.display_name})
+        user_platform_auth = user_auth.auth_info[platform]
+        platform_instance = PLATFORMS[platform]()
+        platform_instance._load_config(user_platform_auth)
+        self.user_platform_sessions[platform][ctx.author.display_name] = platform_instance
+
+    @comp.error
+    async def comp_error(self, ctx, error):
+        if isinstance(error, commands.errors.CheckFailure):
+            await ctx.channel.send("Ήντα που εν τούτο; This platform is not supported")
+            await ctx.channel.send(f"Here you go: {','.join(PLATFORMS.keys())}")
 
     @comp.command()
     async def list(self, ctx, cat="featured", num=5):
@@ -59,15 +96,17 @@ class Competition(commands.Cog):
         """
         if cat.lower() not in CATEGORIES:
             raise InvalidCategoryException
-
-        comps = self.api.competitions_list(category="featured")
+        platform = ctx.message.content.split()[1]
+        comps = self.user_platform_sessions[platform][ctx.author.display_name].competitions_list(category="featured")
         latest_comps = [comp.__dict__ for comp in comps[:num]]
         for latest_comp in latest_comps:
             emb = get_competition_embed(latest_comp, ["description", "reward", "deadline"])
             await ctx.channel.send(embed=emb)
 
-    @comp.error
-    async def comps_error(self, ctx, error):
+        self._remove_user_auth(platform, ctx.author.display_name)
+
+    @list.error
+    async def list_error(self, ctx, error):
         if isinstance(error.original, InvalidCategoryException):
             await ctx.channel.send("The specified category is not supported")
 
@@ -82,7 +121,10 @@ class Competition(commands.Cog):
         """
 
         logger.info(comp_name)
-        comps = self.api.competitions_list(sort_by="latestDeadline")
+        platform = ctx.message.content.split()[1]
+        comps = self.self.user_platform_sessions[platform][ctx.author.display_name].competitions_list(
+            sort_by="latestDeadline"
+        )
         latest_comps = [comp.__dict__ for comp in comps]
 
         max_longest_match = 0
@@ -129,6 +171,8 @@ class Competition(commands.Cog):
         else:
             await ctx.channel.send("Νομίζω έφηε σου το όνομα! Use !comp list to see a list.")
 
+        self._remove_user_auth(platform, ctx.author.display_name)
+
     @create.error
     async def create_error(self, ctx, error):
         if isinstance(error.original, CompetitionAlreadyExistsException):
@@ -141,7 +185,10 @@ class Competition(commands.Cog):
         """
         category = ctx.channel.category.name
         comp = Comp.objects.get({"name": category})
-        leaderboard_results = self.api.competition_leaderboard_view(category)
+        platform = ctx.message.content.split()[1]
+        leaderboard_results = self.self.user_platform_sessions[platform][
+            ctx.author.display_name
+        ].competition_leaderboard_view(category)
         if leaderboard_results:
             comp = Comp.objects.get({"name": category})
             team_ranking = get_team_entry_from_leaderboard(leaderboard_results, comp.team_name)
@@ -150,6 +197,8 @@ class Competition(commands.Cog):
             await ctx.channel.send(
                 f"Place: {team_ranking_vals[FIELDS[0]]}, Last submission date: {team_ranking_vals[2]}, Score: {team_ranking_vals[FIELDS[3]]}"
             )
+
+        self._remove_user_auth(platform, ctx.author.display_name)
 
     @show_ranking.error
     async def show_ranking_error(self, ctx, error):
@@ -298,9 +347,14 @@ class Competition(commands.Cog):
         local_file = os.path.join("/tmp", filename)
         with open(local_file, "wb") as outfile:
             outfile.write(sub_file_content)
-        submit_result = self.api.competition_submit(local_file, desc, comp.name)
+        platform = ctx.message.content()[1]
+        submit_result = self.user_platform_sessions[platform][ctx.author.display_name].competition_submit(
+            local_file, desc, comp.name
+        )
 
         await ctx.channel.send(repr(submit_result))
+
+        self._remove_user_auth(platform, ctx.author.display_name)
 
     @submit.error
     async def submit_error(self, ctx, error):

@@ -9,8 +9,8 @@ from talosbot.exceptions import TutorialAlreadyExistsException
 logger = logging.getLogger(__name__)
 
 
-def check_role(ctx):
-    return ctx.author.roles == Tutorial.CREATE_ROLE
+async def check_role(ctx):
+    return Tutorial.CREATE_ROLE in [role.name for role in ctx.author.roles]
 
 
 has_create_role = commands.check(check_role)
@@ -19,7 +19,7 @@ has_create_role = commands.check(check_role)
 class Tutorial(commands.Cog):
 
     CREATE_ROLE = None
-    MODERATOR_ONLY_CHANNEL_ID = "912064147146047520"
+    MODERATOR_ONLY_CHANNEL_ID = 934108003228061736
 
     def __init__(self, bot):
         self.bot = bot
@@ -55,16 +55,20 @@ class Tutorial(commands.Cog):
             category (str): the tutorial category
         """
 
-        tutorial = TutorialModel.objects.get(name=name)
+        try:
+            tutorial = TutorialModel.objects.get({"name": name})
+            if tutorial is not None:
+                raise TutorialAlreadyExistsException
+        except TutorialModel.DoesNotExist:
+            TutorialModel(
+                name=name, created_at=datetime.datetime.now(), url=url, difficulty=difficulty, category=category
+            ).save()
+        general_channel = discord.utils.get(
+            discord.utils.get(self.guild.categories, name="cybrainers").channels, name="general"
+        )
 
-        if tutorial is not None:
-            raise TutorialAlreadyExistsException
-
-        TutorialModel(
-            name=name, created_at=datetime.datetime.now(), url=url, difficulty=difficulty, category=category
-        ).save()
-
-        channel = self.bot.guild[0].get_channel(Tutorial.MODERATOR_ONLY_CHANNEL_ID)
+        await general_channel.send("@everyone!!! A new tutorial has been added! Πάμε να μάθουμεεε..!! :partying_face:")
+        channel = self.guild.get_channel(Tutorial.MODERATOR_ONLY_CHANNEL_ID)
         await channel.send("Tutorial has been created.")
 
     @create.error
@@ -74,7 +78,12 @@ class Tutorial(commands.Cog):
 
     @tutorial.command()
     async def list(self, ctx):
+        """
+        Lists all tutorials uploaded to the database.
+        """
         tutorials = TutorialModel.objects.all()
+        if tutorials.count() == 0:
+            await ctx.channel.send("Ένεσηει τουτόριαλς κόμααα... No tutorials added yet! Admins where you at??")
         for tutorial in tutorials:
             emb = self._get_tutorial_embed(tutorial)
             await ctx.channel.send(embed=emb)

@@ -25,7 +25,6 @@ def chunkify(text, limit):
 
 
 def get_competition_embed(comp, emp_desc_fields, title_field="ref"):
-
     if isinstance(comp, dict):
         title = comp.get(title_field)
         url = comp.get("url")
