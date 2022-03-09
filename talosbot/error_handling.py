@@ -7,6 +7,7 @@ from discord.ext.commands.errors import (
     NoPrivateMessage,
     MissingRole,
     MissingRequiredArgument,
+    CheckFailure,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,8 @@ def hook_error_handlers(bot):
     async def on_command_error(ctx, error):
 
         logger.info("ON_COMMAND_ERROR")
+        if isinstance(error, CheckFailure):
+            return
 
         if ctx.cog is not None:
             logger.info(f"Received cog exception: {error}")
