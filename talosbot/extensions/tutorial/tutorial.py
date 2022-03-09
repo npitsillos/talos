@@ -63,7 +63,9 @@ class Tutorial(commands.Cog):
             TutorialModel(
                 name=name, created_at=datetime.datetime.now(), url=url, difficulty=difficulty, category=category
             ).save()
-        general_channel = discord.utils.get(discord.utils.get(self.guild.categories, name="cybrainers").channels, name="general")
+        general_channel = discord.utils.get(
+            discord.utils.get(self.guild.categories, name="cybrainers").channels, name="general"
+        )
 
         await general_channel.send("@everyone!!! A new tutorial has been added! Πάμε να μάθουμεεε..!! :partying_face:")
         channel = self.guild.get_channel(Tutorial.MODERATOR_ONLY_CHANNEL_ID)
@@ -73,7 +75,6 @@ class Tutorial(commands.Cog):
     async def create_error(self, ctx, error):
         if isinstance(error.original, TutorialAlreadyExistsException):
             await ctx.channel.send("Ρεεεε τούτο το τουτόριαλ υπάρχει!!")
-
 
     @tutorial.command()
     async def list(self, ctx):
@@ -86,6 +87,7 @@ class Tutorial(commands.Cog):
         for tutorial in tutorials:
             emb = self._get_tutorial_embed(tutorial)
             await ctx.channel.send(embed=emb)
+
 
 def setup(bot):
     bot.add_cog(Tutorial(bot))

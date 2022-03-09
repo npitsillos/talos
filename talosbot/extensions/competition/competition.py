@@ -24,20 +24,22 @@ logger = logging.getLogger(__name__)
 
 CATEGORIES = ["featured", "research", "recruitment", "gettingStarted", "masters", "playground"]
 FIELDS = ["teamId", "teamName", "submissionDate", "score"]
-PLATFORMS = {"kaggle": KaggleApi}#, "aicrowd"]
+PLATFORMS = {"kaggle": KaggleApi}  # , "aicrowd"]
+
 
 async def is_platfrom_supported(ctx):
     split_msg = ctx.message.content.split()
-    if len(split_msg) == 1: return False
+    if len(split_msg) == 1:
+        return False
     platform = ctx.message.content.split()[1]
     return platform in PLATFORMS.keys()
+
 
 class Competition(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.user_platform_sessions = {key: {} for key in PLATFORMS.keys()}
 
-    
     def _remove_user_auth(self, platform, user_name):
         self.user_platform_sessions[platform].pop(user_name)
 
@@ -50,7 +52,9 @@ class Competition(commands.Cog):
             user_auth = None
             user_auth = UserAuth.objects.get({"user": ctx.author.display_name})
         except UserAuth.DoesNotExist:
-            await ctx.channel.send(f"Έν σε ξέρω ρεεε... You are not authenticated. Run `{ctx.cog.bot.command_prefix}auth`.")
+            await ctx.channel.send(
+                f"Έν σε ξέρω ρεεε... You are not authenticated. Run `{ctx.cog.bot.command_prefix}auth`."
+            )
         return user_auth is not None
 
     @commands.group()
@@ -72,13 +76,13 @@ class Competition(commands.Cog):
         platform_instance = PLATFORMS[platform]()
         platform_instance._load_config(user_platform_auth)
         self.user_platform_sessions[platform][ctx.author.display_name] = platform_instance
-    
+
     @comp.error
     async def comp_error(self, ctx, error):
         if isinstance(error, commands.errors.CheckFailure):
             await ctx.channel.send("Ήντα που εν τούτο; This platform is not supported")
             await ctx.channel.send(f"Here you go: {','.join(PLATFORMS.keys())}")
-    
+
     @comp.command()
     async def list(self, ctx, cat="featured", num=5):
         """
@@ -118,7 +122,9 @@ class Competition(commands.Cog):
 
         logger.info(comp_name)
         platform = ctx.message.content.split()[1]
-        comps = self.self.user_platform_sessions[platform][ctx.author.display_name].competitions_list(sort_by="latestDeadline")
+        comps = self.self.user_platform_sessions[platform][ctx.author.display_name].competitions_list(
+            sort_by="latestDeadline"
+        )
         latest_comps = [comp.__dict__ for comp in comps]
 
         max_longest_match = 0
@@ -180,7 +186,9 @@ class Competition(commands.Cog):
         category = ctx.channel.category.name
         comp = Comp.objects.get({"name": category})
         platform = ctx.message.content.split()[1]
-        leaderboard_results = self.self.user_platform_sessions[platform][ctx.author.display_name].competition_leaderboard_view(category)
+        leaderboard_results = self.self.user_platform_sessions[platform][
+            ctx.author.display_name
+        ].competition_leaderboard_view(category)
         if leaderboard_results:
             comp = Comp.objects.get({"name": category})
             team_ranking = get_team_entry_from_leaderboard(leaderboard_results, comp.team_name)
@@ -191,7 +199,7 @@ class Competition(commands.Cog):
             )
 
         self._remove_user_auth(platform, ctx.author.display_name)
-    
+
     @show_ranking.error
     async def show_ranking_error(self, ctx, error):
         if isinstance(error.original, Comp.DoesNotExist):
@@ -340,7 +348,9 @@ class Competition(commands.Cog):
         with open(local_file, "wb") as outfile:
             outfile.write(sub_file_content)
         platform = ctx.message.content()[1]
-        submit_result = self.user_platform_sessions[platform][ctx.author.display_name].competition_submit(local_file, desc, comp.name)
+        submit_result = self.user_platform_sessions[platform][ctx.author.display_name].competition_submit(
+            local_file, desc, comp.name
+        )
 
         await ctx.channel.send(repr(submit_result))
 

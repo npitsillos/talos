@@ -108,11 +108,16 @@ class BaseCommandsMixin:
             else:
                 await ctx.author.send("You have already uploaded your authentication information.")
                 return
-            
-            await ctx.author.send("Please upload a json file containing a dictionary with keys the platforms "\
-                "you want to be authenticated on.")
 
-            await ctx.author.send("This file should have the following format:\n```\n{'kaggle': {'username': 'USERNAME', 'key': 'API_KEY'}, 'other_platform': 'other_platform_dict'}\n```")
+            await ctx.author.send(
+                "Please upload a json file containing a dictionary with keys the platforms "
+                "you want to be authenticated on."
+            )
+
+            await ctx.author.send(
+                "This file should have the following format:\n```\n{'kaggle': {'username': 'USERNAME', 'key': 'API_KEY'}, 'other_platform': 'other_platform_dict'}\n```"
+            )
+
             async def wait_for_file():
                 """
                 Coroutine that waits for a file to be uploaded
