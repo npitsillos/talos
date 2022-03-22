@@ -99,9 +99,6 @@ class BaseCommandsMixin:
                 await ctx.channel.send("Please carry out this process in a private channel")
 
             try:
-                al = UserAuth.objects.all()
-                for a in al:
-                    print(a)
                 UserAuth.objects.get({"user": ctx.author.display_name})
             except UserAuth.DoesNotExist:
                 pass
@@ -140,3 +137,18 @@ class BaseCommandsMixin:
 
                 message = await ctx.author.send("User authentication info added")
                 await message.add_reaction("✅")
+
+        @bot.command(aliases=["unauth"])
+        async def remove_auth(ctx):
+            user_auth = UserAuth.objects.get({"user": ctx.author.display_name})
+            user_auth.delete()
+
+            message = await ctx.author.send("User authentication removed!")
+            await message.add_reaction("✅")
+
+        @remove_auth.error
+        async def remove_auth_error(ctx, error):
+            if isinstance(error.original, UserAuth.DoesNotExist):
+                await ctx.author.send(
+                    "You have not uploaded your authentication information. Run {bot.command_prefix}help auth."
+                )
