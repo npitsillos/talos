@@ -32,8 +32,11 @@ async def is_platfrom_supported(ctx):
         raise commands.errors.CheckFailure(message="Που εν το πλάτφορμ νέιμ ρε; Please provide a platform name")
     platform = ctx.message.content.split()[1]
     if platform not in PLATFORMS.keys():
-        raise commands.errors.CheckFailure(message=f"Ήντα που εν τούτο; Platform not supported! Here you go: {','.join(PLATFORMS.keys())}")
+        raise commands.errors.CheckFailure(
+            message=f"Ήντα που εν τούτο; Platform not supported! Here you go: {','.join(PLATFORMS.keys())}"
+        )
     return True
+
 
 class Competition(commands.Cog):
     def __init__(self, bot):
@@ -51,7 +54,9 @@ class Competition(commands.Cog):
         try:
             UserAuth.objects.get({"user": ctx.author.display_name})
         except UserAuth.DoesNotExist:
-            raise commands.CheckFailure(message=f"Έν σε ξέρω ρεεε... You are not authenticated. Run `{ctx.cog.bot.command_prefix}auth`.")
+            raise commands.CheckFailure(
+                message=f"Έν σε ξέρω ρεεε... You are not authenticated. Run `{ctx.cog.bot.command_prefix}auth`."
+            )
         return True
 
     @commands.group()
