@@ -122,7 +122,7 @@ class Competition(commands.Cog):
 
         logger.info(comp_name)
         platform = ctx.message.content.split()[1]
-        comps = self.self.user_platform_sessions[platform][ctx.author.display_name].competitions_list(
+        comps = self.user_platform_sessions[platform][ctx.author.display_name].competitions_list(
             sort_by="latestDeadline"
         )
         latest_comps = [comp.__dict__ for comp in comps]
@@ -186,7 +186,7 @@ class Competition(commands.Cog):
         category = ctx.channel.category.name
         comp = Comp.objects.get({"name": category})
         platform = ctx.message.content.split()[1]
-        leaderboard_results = self.self.user_platform_sessions[platform][
+        leaderboard_results = self.user_platform_sessions[platform][
             ctx.author.display_name
         ].competition_leaderboard_view(category)
         if leaderboard_results:
