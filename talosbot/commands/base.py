@@ -149,4 +149,6 @@ class BaseCommandsMixin:
         @remove_auth.error
         async def remove_auth_error(ctx, error):
             if isinstance(error.original, UserAuth.DoesNotExist):
-                await ctx.author.send("You have not uploaded your authentication information. Run {bot.command_prefix}help auth.")
+                await ctx.author.send(
+                    "You have not uploaded your authentication information. Run {bot.command_prefix}help auth."
+                )
