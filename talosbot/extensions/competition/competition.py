@@ -28,12 +28,12 @@ PLATFORMS = {"kaggle": KaggleApi}  # , "aicrowd"]
 
 
 async def is_platfrom_supported(ctx):
-    split_msg = ctx.message.content.split()
-    if len(split_msg) == 1:
-        return False
+    if len(ctx.message.content.split()) == 1:
+        raise commands.errors.CheckFailure(message="Που εν το πλάτφορμ νέιμ ρε; Please provide a platform name")
     platform = ctx.message.content.split()[1]
-    return platform in PLATFORMS.keys()
-
+    if platform not in PLATFORMS.keys():
+        raise commands.errors.CheckFailure(message=f"Ήντα που εν τούτο; Platform not supported! Here you go: {','.join(PLATFORMS.keys())}")
+    return True
 
 class Competition(commands.Cog):
     def __init__(self, bot):
@@ -49,13 +49,10 @@ class Competition(commands.Cog):
         their credentials of various platforms were added to the server.
         """
         try:
-            user_auth = None
-            user_auth = UserAuth.objects.get({"user": ctx.author.display_name})
+            UserAuth.objects.get({"user": ctx.author.display_name})
         except UserAuth.DoesNotExist:
-            await ctx.channel.send(
-                f"Έν σε ξέρω ρεεε... You are not authenticated. Run `{ctx.cog.bot.command_prefix}auth`."
-            )
-        return user_auth is not None
+            raise commands.CheckFailure(message=f"Έν σε ξέρω ρεεε... You are not authenticated. Run `{ctx.cog.bot.command_prefix}auth`.")
+        return True
 
     @commands.group()
     @commands.check(is_platfrom_supported)
@@ -67,10 +64,9 @@ class Competition(commands.Cog):
         """
         self.guild = ctx.guild
         self.gid = ctx.guild.id
-
+        print(platform)
         if ctx.invoked_subcommand is None:
             await ctx.send("Invalid command passed. Use !help.")
-
         user_auth = UserAuth.objects.get({"user": ctx.author.display_name})
         user_platform_auth = user_auth.auth_info[platform]
         platform_instance = PLATFORMS[platform]()
@@ -80,8 +76,9 @@ class Competition(commands.Cog):
     @comp.error
     async def comp_error(self, ctx, error):
         if isinstance(error, commands.errors.CheckFailure):
-            await ctx.channel.send("Ήντα που εν τούτο; This platform is not supported")
-            await ctx.channel.send(f"Here you go: {','.join(PLATFORMS.keys())}")
+            await ctx.channel.send(error)
+            # await ctx.channel.send("Ήντα που εν τούτο; This platform is not supported")
+            # await ctx.channel.send(f"Here you go: {','.join(PLATFORMS.keys())}")
 
     @comp.command()
     async def list(self, ctx, cat="featured", num=5):
@@ -156,6 +153,7 @@ class Competition(commands.Cog):
 
             Comp(
                 name=category,
+                pltform=platform,
                 description=matched_comp["description"],
                 url=matched_comp["url"],
                 created_at=datetime.datetime.now(),
