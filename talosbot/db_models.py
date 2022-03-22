@@ -41,7 +41,7 @@ class Comp(MongoModel):
         status = (
             f":triangular_flag_on_post:**\t{self.name}**\n***{self.description}.***\n**Merger Deadline:**\t{merger_deadline}"
             + f"\n**Deadline:**\t{deadline}\n**Team Name:**\t{self.team_name}\n:busts_in_silhouette:\t{members}\n"
-            + f"**Team Size:**\t{self.max_team_size}\n:link:\t{self.url}"
+            + f"**Team Size:**\t{self.max_team_size}\n:link:\t{self.url}\n"
         )
 
         return status
