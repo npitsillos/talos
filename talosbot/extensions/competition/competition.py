@@ -64,7 +64,6 @@ class Competition(commands.Cog):
         """
         self.guild = ctx.guild
         self.gid = ctx.guild.id
-        print(platform)
         if ctx.invoked_subcommand is None:
             await ctx.send("Invalid command passed. Use !help.")
         user_auth = UserAuth.objects.get({"user": ctx.author.display_name})
@@ -77,8 +76,6 @@ class Competition(commands.Cog):
     async def comp_error(self, ctx, error):
         if isinstance(error, commands.errors.CheckFailure):
             await ctx.channel.send(error)
-            # await ctx.channel.send("Ήντα που εν τούτο; This platform is not supported")
-            # await ctx.channel.send(f"Here you go: {','.join(PLATFORMS.keys())}")
 
     @comp.command()
     async def list(self, ctx, cat="featured", num=5):
@@ -153,7 +150,7 @@ class Competition(commands.Cog):
 
             Comp(
                 name=category,
-                pltform=platform,
+                platform=platform,
                 description=matched_comp["description"],
                 url=matched_comp["url"],
                 created_at=datetime.datetime.now(),
