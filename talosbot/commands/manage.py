@@ -49,6 +49,7 @@ class ManageCommandsMixin:
         async def dropcomp(ctx, name):
             comp = Comp.objects.get({"name": name})
             category = discord.utils.get(ctx.guild.categories, name=name)
+            
             comp_role = discord.utils.get(ctx.guild.roles, name=f"Comp-{name}")
 
             if comp_role is not None:
